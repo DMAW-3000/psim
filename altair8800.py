@@ -1,5 +1,5 @@
 """
-Intel MDS800 8080 system.
+Altair 8080 system.
 
 16 KB RAM           = 0x0000
  4 KB BASIC ROM     = 0xe000,  altbasic.hex
