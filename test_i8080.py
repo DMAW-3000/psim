@@ -130,9 +130,9 @@ class Test_i8080(unittest.TestCase):
         
     def test_adi(self):
         self.clear()
-        self._ram._m[0] = 0xc6      # ADI
+        self._ram._m[0] = 0xc6      # ADI 81
         self._ram._m[1] = 0x81
-        self._ram._m[2] = 0xc6      # ADI
+        self._ram._m[2] = 0xc6      # ADI 82
         self._ram._m[3] = 0x82
         self._proc._step()
         self.assertEqual(self._proc._a, 0x81)
@@ -141,6 +141,24 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._a, 0x03)
         self.assertTrue(self._proc._flags.cy)
         self.assertEqual(self._proc._pc, 0x0004)
+        
+    def test_ora(self):
+        self.clear()
+        self._ram._m[0] = 0xb4      # ORA H
+        self._proc._a = 0x21
+        self._proc._h = 0xe8
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0001)
+        self.assertEqual(self._proc._a, 0xe9)
+        
+    def test_ori(self):
+        self.clear()
+        self._ram._m[0] = 0xf6      # ORI E8
+        self._ram._m[1] = 0xe8
+        self._proc._a = 0x21
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0002)
+        self.assertEqual(self._proc._a, 0xe9)
         
     def test_push(self):
         self.clear()
@@ -314,6 +332,16 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0003)
         self.assertEqual(self._ram._m[18], 0xd1)
         
+    def test_stax(self):
+        self.clear()
+        self._ram._m[0] = 0x12      # STAX D
+        self._proc._e = 0x12
+        self._proc._d = 0x00
+        self._proc._a = 0xd1
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0001)
+        self.assertEqual(self._ram._m[18], 0xd1)
+        
     def test_ei(self):
         self.clear()
         self._ram._m[0] = 0xfb      # EI
@@ -345,6 +373,31 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x0011)
+        
+    def test_stc(self):
+        self.clear()
+        self._ram._m[0] = 0x37      # STC
+        self._proc._step()
+        self.assertTrue(self._proc._pc, 0x0001)
+        self.assertTrue(self._proc._flags.cy)
+        
+    def test_cmc(self):
+        self.clear()
+        self._ram._m[0] = 0x3f      # CMC
+        self._ram._m[1] = 0x3f      # CMC
+        self._proc._step()
+        self.assertTrue(self._proc._flags.cy)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.cy)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_cma(self):
+        self.clear()
+        self._ram._m[0] = 0x2f      # CMA
+        self._proc._a = 0x55
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0001)
+        self.assertEqual(self._proc._a, 0xaa)
         
        
 if __name__ == '__main__':
