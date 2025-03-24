@@ -145,11 +145,12 @@ class Test_i8080(unittest.TestCase):
     def test_ora(self):
         self.clear()
         self._ram._m[0] = 0xb4      # ORA H
-        self._proc._a = 0x21
-        self._proc._h = 0xe8
+        self._proc._a = 0x14
+        self._proc._h = 0x26
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x0001)
-        self.assertEqual(self._proc._a, 0xe9)
+        self.assertEqual(self._proc._a, 0x36)
+        self.assertFalse(self._proc._flags.cy)
         
     def test_ori(self):
         self.clear()
@@ -159,6 +160,27 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x0002)
         self.assertEqual(self._proc._a, 0xe9)
+        self.assertFalse(self._proc._flags.cy)
+        
+    def test_ana(self):
+        self.clear()
+        self._ram._m[0] = 0xa4      # ANA H
+        self._proc._a = 0x14
+        self._proc._h = 0x26
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0001)
+        self.assertEqual(self._proc._a, 0x04)
+        self.assertFalse(self._proc._flags.cy)
+        
+    def test_ani(self):
+        self.clear()
+        self._ram._m[0] = 0xe6      # ANI E8
+        self._ram._m[1] = 0xe8
+        self._proc._a = 0x21
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0002)
+        self.assertEqual(self._proc._a, 0x20)
+        self.assertFalse(self._proc._flags.cy)
         
     def test_push(self):
         self.clear()
@@ -183,16 +205,6 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._h, 0x43)
         self.assertEqual(self._proc._pc, 0x0001)
         self.assertEqual(self._proc._sp, 0x0020)
-        
-    def test_ora(self):
-        self.clear()
-        self._ram._m[0] = 0xb4      # ORA
-        self._proc._a = 0x14
-        self._proc._h = 0x26
-        self._proc._step()
-        self.assertEqual(self._proc._pc, 0x0001)
-        self.assertEqual(self._proc._a, 0x36)
-        self.assertFalse(self._proc._flags.cy)
         
     def test_lxi(self):
         self.clear()
