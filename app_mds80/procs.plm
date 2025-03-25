@@ -1,0 +1,26 @@
+BUBBLE$SORT: PROCEDURE;
+	DECLARE (I, SWITCHED) BYTE,
+		TEMP ADDRESS;
+	SWITCHED = 1;
+	DO WHILE SWITCHED; 
+		SWITCHED = 0;
+		DO I = 0 TO LAST(A) - 1;
+			IF A(I) > A(I+1) THEN
+				DO; SWITCHED = 1;
+				TEMP = A(I); 
+				A(I) = A(I+1);
+				A(I+1) = TEMP;
+				END;
+		END;
+	END;
+	RETURN;
+END BUBBLE$SORT;
+
+SQUARE$ROOT: PROCEDURE(X) ADDRESS;
+	DECLARE (X,Y,Z) ADDRESS;
+	Y=X; Z=SHR(X+1,1);                                                          
+	DO WHILE Y<>Z;                                                          
+		Y=Z; Z=SHR(X/Y + Y + 1, 1);                                             
+		END;
+	RETURN Y;
+END SQUARE$ROOT;
