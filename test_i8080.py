@@ -261,6 +261,58 @@ class Test_i8080(unittest.TestCase):
         self.assertFalse(self._proc._flags.cy)
         self.assertEqual(self._proc._pc, 0x0002)
         
+    def test_rar(self):
+        self.clear()
+        self._ram._m[0] = 0x1f      # RAR
+        self._ram._m[1] = 0x1f      # RAR
+        self._proc._a = 0x81
+        self._proc._step()
+        self.assertTrue(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0x40)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0xa0)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_ral(self):
+        self.clear()
+        self._ram._m[0] = 0x17      # RAL
+        self._ram._m[1] = 0x17      # RAL
+        self._proc._a = 0x81
+        self._proc._step()
+        self.assertTrue(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0x02)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0x05)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_rrc(self):
+        self.clear()
+        self._ram._m[0] = 0x0f      # RRC
+        self._ram._m[1] = 0x0f      # RRC
+        self._proc._a = 0x81
+        self._proc._step()
+        self.assertTrue(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0xc0)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0x60)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_rlc(self):
+        self.clear()
+        self._ram._m[0] = 0x07      # RLC
+        self._ram._m[1] = 0x07      # RLC
+        self._proc._a = 0x81
+        self._proc._step()
+        self.assertTrue(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0x03)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.cy)
+        self.assertEqual(self._proc._a, 0x06)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
     def test_push(self):
         self.clear()
         self._ram._m[0] = 0xc5      # PUSH B
