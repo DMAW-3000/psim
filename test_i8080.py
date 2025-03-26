@@ -111,6 +111,7 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._a, 0x03)
         self.assertTrue(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         self.assertEqual(self._proc._pc, 0x0002)
         
     def test_adc(self):
@@ -126,6 +127,7 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._a, 0x04)
         self.assertTrue(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         self.assertEqual(self._proc._pc, 0x0002)
         
     def test_adi(self):
@@ -140,7 +142,20 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._a, 0x03)
         self.assertTrue(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         self.assertEqual(self._proc._pc, 0x0004)
+        
+    def test_dad(self):
+        self.clear()
+        self._ram._m[0] = 0x09      # DAD B
+        self._proc._b = 0x54
+        self._proc._c = 0xba
+        self._proc._h = 0x72
+        self._proc._l = 0xf0
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0001)
+        self.assertEqual(self._proc._h, 0xc7)
+        self.assertEqual(self._proc._l, 0xaa)
         
     def test_sub(self):
         self.clear()
@@ -155,6 +170,7 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._a, 0xfd)
         self.assertTrue(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         self.assertEqual(self._proc._pc, 0x0002)
         
     def test_sbb(self):
@@ -171,6 +187,7 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._a, 0xfc)
         self.assertTrue(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         self.assertEqual(self._proc._pc, 0x0002)
         
     def test_sbi(self):
@@ -186,6 +203,7 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._a, 0xfd)
         self.assertTrue(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         self.assertEqual(self._proc._pc, 0x0004)
         
     def test_ora(self):
@@ -197,6 +215,7 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0001)
         self.assertEqual(self._proc._a, 0x36)
         self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         
     def test_ori(self):
         self.clear()
@@ -207,6 +226,7 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0002)
         self.assertEqual(self._proc._a, 0xe9)
         self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         
     def test_ana(self):
         self.clear()
@@ -217,6 +237,7 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0001)
         self.assertEqual(self._proc._a, 0x04)
         self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         
     def test_ani(self):
         self.clear()
@@ -227,6 +248,7 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0002)
         self.assertEqual(self._proc._a, 0x20)
         self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         
     def test_xra(self):
         self.clear()
@@ -237,6 +259,7 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0001)
         self.assertEqual(self._proc._a, 0x32)
         self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         
     def test_xri(self):
         self.clear()
@@ -247,6 +270,7 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0002)
         self.assertEqual(self._proc._a, 0xc9)
         self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         
     def test_cmp(self):
         self.clear()
@@ -259,7 +283,22 @@ class Test_i8080(unittest.TestCase):
         self.assertTrue(self._proc._flags.cy)
         self._proc._step()
         self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
         self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_cpi(self):
+        self.clear()
+        self._ram._m[0] = 0xfe      # CPI F8
+        self._ram._m[1] = 0xf8  
+        self._ram._m[2] = 0xfe      # CPI 04
+        self._ram._m[3] = 0x04
+        self._proc._a = 0x15
+        self._proc._step()
+        self.assertTrue(self._proc._flags.cy)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.cy)
+        self.assertFalse(self._proc._flags.z)
+        self.assertEqual(self._proc._pc, 0x0004)
         
     def test_rar(self):
         self.clear()
@@ -513,6 +552,105 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._ram._m[31], 0x00)
         self.assertEqual(self._ram._m[30], 0x03)
         
+    def test_cz(self):
+        self.clear()
+        self._ram._m[0] = 0xcc      # CZ 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xcc      # CZ 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._sp = 0x0020
+        self._proc._flags.z = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self.assertEqual(self._proc._sp, 0x001e)
+        self.assertEqual(self._ram._m[31], 0x00)
+        self.assertEqual(self._ram._m[30], 0x03)
+        self._proc._flags.z = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        self.assertEqual(self._proc._sp, 0x001e)
+        
+    def test_cc(self):
+        self.clear()
+        self._ram._m[0] = 0xdc      # CC 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xdc      # CC 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._sp = 0x0020
+        self._proc._flags.cy = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self.assertEqual(self._proc._sp, 0x001e)
+        self.assertEqual(self._ram._m[31], 0x00)
+        self.assertEqual(self._ram._m[30], 0x03)
+        self._proc._flags.cy = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        self.assertEqual(self._proc._sp, 0x001e)
+        
+    def test_cm(self):
+        self.clear()
+        self._ram._m[0] = 0xfc      # CM 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xfc      # CM 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._sp = 0x0020
+        self._proc._flags.s = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self.assertEqual(self._proc._sp, 0x001e)
+        self.assertEqual(self._ram._m[31], 0x00)
+        self.assertEqual(self._ram._m[30], 0x03)
+        self._proc._flags.s = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        self.assertEqual(self._proc._sp, 0x001e)
+        
+    def test_cpe(self):
+        self.clear()
+        self._ram._m[0] = 0xec      # CPE 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xec      # CPE 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._sp = 0x0020
+        self._proc._flags.p = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self.assertEqual(self._proc._sp, 0x001e)
+        self.assertEqual(self._ram._m[31], 0x00)
+        self.assertEqual(self._ram._m[30], 0x03)
+        self._proc._flags.p = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        self.assertEqual(self._proc._sp, 0x001e)
+        
+    def test_cnz(self):
+        self.clear()
+        self._ram._m[0] = 0xc4      # CNZ 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xc4      # CNZ 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._sp = 0x0020
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self.assertEqual(self._proc._sp, 0x001e)
+        self.assertEqual(self._ram._m[31], 0x00)
+        self.assertEqual(self._ram._m[30], 0x03)
+        self._proc._flags.z = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        self.assertEqual(self._proc._sp, 0x001e)
+        
     def test_rst(self):
         self.clear()
         self._ram._m[0] = 0xcf      # RST0
@@ -658,6 +796,23 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0001)
         self.assertEqual(self._proc._a, 0xaa)
         
+    def test_in(self):
+        self.clear()
+        self._ram._m[0] = 0xdb      # IN 03
+        self._ram._m[1] = 0x03
+        self._ports._m[3] = 0x67
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0002)
+        self.assertEqual(self._proc._a, 0x67)
+        
+    def test_out(self):
+        self.clear()
+        self._ram._m[0] = 0xd3      # OUT 14
+        self._ram._m[1] = 0x14
+        self._proc._a = 0x2c
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0002)
+        self.assertEqual(self._ports._m[20], 0x2c)
        
 if __name__ == '__main__':
    
