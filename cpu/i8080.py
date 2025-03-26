@@ -46,16 +46,16 @@ class i8080(Processor):
 
         self._reg_map = ("_b", "_c", "_d", "_e", "_h", "_l", "_m", "_a")
 
-        self._arith_map = {
-            0x10 : self._ADD,
-            0x11 : self._ADC,
-            0x12 : self._SUB,
-            0x13 : self._SBB,                    
-            0x14 : self._ANA,
-            0x15 : self._XRA,
-            0x16 : self._ORA,
-            0x17 : self._CMP,
-        }
+        self._arith_map = [
+            self._ADD,
+            self._ADC,
+            self._SUB,
+            self._SBB,                    
+            self._ANA,
+            self._XRA,
+            self._ORA,
+            self._CMP,
+        ]
 
         self._ldst_map = {
             0x3a : self._LDA,
@@ -177,13 +177,8 @@ class i8080(Processor):
         elif t == 0x00:
             f = self._ldst_map.get(op, self._default_ldst)
             self._pc = f(op, pc) + pc
-        elif t == 0x80: 
-            try:
-                f = self._arith_map[(op & 0xf8) >> 3]
-            except KeyError:
-                print("ERROR: unknown opcode: %02x" % op)
-                self.halt()
-                return
+        elif t == 0x80:
+            f = self._arith_map[(op & 0x38) >> 3]
             f(op & 0x07)
             self._pc = pc + 1
         else:
