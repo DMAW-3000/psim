@@ -383,17 +383,17 @@ class i8080(Processor):
         return 1
             
     def _LDAX(self, op, pc): 
-        (a0, a1) = self._rp_read((op & 0x30) >> 4)
+        a0, a1 = self._rp_read((op & 0x30) >> 4)
         self._a = self._mr((a1 << 8) + a0)
         return 1
     
     def _STAX(self, op, pc):
-        (a0, a1) = self._rp_read((op & 0x30) >> 4)
+        a0, a1 = self._rp_read((op & 0x30) >> 4)
         self._mw((a1 << 8) + a0, self._a)
         return 1
     
     def _DAD(self, op, pc): 
-        (x0, x1) = self._rp_read((op & 0x30) >> 4)
+        x0, x1 = self._rp_read((op & 0x30) >> 4)
         d0 = (self._h << 8) + self._l + (x1 << 8) + x0
         self._flags.cy = (d0 > 0xffff)
         self._h = (d0 >> 8) & 0xff
@@ -657,7 +657,7 @@ class i8080(Processor):
         
     def _PUSH(self, op, pc, sp):
         mw = self._mw
-        (x0, x1) = self._rp_read((op & 0x30) >> 4)
+        x0, x1 = self._rp_read((op & 0x30) >> 4)
         mw(sp - 1, x1)
         mw(sp - 2, x0)
         self._sp = (sp - 2) & 0xffff
