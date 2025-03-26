@@ -329,11 +329,57 @@ class i8080(Processor):
         return 1
     
     def _INX(self, op, pc):
-        self._rp_incr((op & 0x30) >> 4)
+        code = (op & 0x30) >> 4
+        if code == 0:
+            t = self._c + 1
+            if t > 255:
+                self._c = 0
+                self._b = (self._b + 1) & 0xff
+            else:
+                self._c = t
+        elif code == 1:
+            t = self._e + 1
+            if t > 255:
+                self._e = 0
+                self._d = (self._d + 1) & 0xff
+            else:
+                self._e = t
+        elif code == 2:
+            t = self._l + 1
+            if t > 255:
+                self._l = 0
+                self._h = (self._h + 1) & 0xff
+            else:
+                self._l = t
+        else:
+            self._sp = (self._sp + 1) & 0xffff
         return 1
             
     def _DCX(self, op, pc): 
-        self._rp_decr((op & 0x30) >> 4)
+        code = (op & 0x30) >> 4
+        if code == 0:
+            t = self._c - 1
+            if t < 0:
+                self._c = 255
+                self._b = (self._b - 1) & 0xff
+            else:
+                self._c = t
+        elif code == 1:
+            t = self._e - 1
+            if t < 0:
+                self._e = 255
+                self._d = (self._d - 1) & 0xff
+            else:
+                self._e = t
+        elif code == 2:
+            t = self._l - 1
+            if t < 0:
+                self._l = 255
+                self._h = (self._h - 1) & 0xff
+            else:
+                self._l = t
+        else:
+            self._sp = (self._sp - 1) & 0xffff
         return 1
             
     def _LDAX(self, op, pc): 
@@ -722,57 +768,6 @@ class i8080(Processor):
             return (self._l, self._h)
         else:
             return (self._sp & 0xff, self._sp >> 8)
-
-    def _rp_incr(self, code):
-        if code == 0:
-            t = self._c + 1
-            if t > 255:
-                self._c = 0
-                self._b = (self._b + 1) & 0xff
-            else:
-                self._c = t
-        elif code == 1:
-            t = self._e + 1
-            if t > 255:
-                self._e = 0
-                self._d = (self._d + 1) & 0xff
-            else:
-                self._e = t
-        elif code == 2:
-            t = self._l + 1
-            if t > 255:
-                self._l = 0
-                self._h = (self._h + 1) & 0xff
-            else:
-                self._l = t
-        else:
-            self._sp = (self._sp + 1) & 0xffff
-
-    def _rp_decr(self, code):
-        if code == 0:
-            t = self._c - 1
-            if t < 0:
-                self._c = 255
-                self._b = (self._b - 1) & 0xff
-            else:
-                self._c = t
-        elif code == 1:
-            t = self._e - 1
-            if t < 0:
-                self._e = 255
-                self._d = (self._d - 1) & 0xff
-            else:
-                self._e = t
-        elif code == 2:
-            t = self._l - 1
-            if t < 0:
-                self._l = 255
-                self._h = (self._h - 1) & 0xff
-            else:
-                self._l = t
-        else:
-            self._sp = (self._sp - 1) & 0xffff
-        
 
     def _print_state(self):
         print("A=%02x B=%02x C=%02x D=%02x E=%02x H=%02x L=%02x" % \
