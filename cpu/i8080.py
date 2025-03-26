@@ -46,7 +46,7 @@ class i8080(Processor):
 
         self._reg_map = ("_b", "_c", "_d", "_e", "_h", "_l", "_m", "_a")
 
-        self._arith_map = [
+        self._arith_map = (
             self._ADD,
             self._ADC,
             self._SUB,
@@ -54,8 +54,8 @@ class i8080(Processor):
             self._ANA,
             self._XRA,
             self._ORA,
-            self._CMP,
-        ]
+            self._CMP
+        )
 
         self._ldst_map = {
             0x3a : self._LDA,
