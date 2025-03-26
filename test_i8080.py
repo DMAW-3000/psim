@@ -142,6 +142,52 @@ class Test_i8080(unittest.TestCase):
         self.assertTrue(self._proc._flags.cy)
         self.assertEqual(self._proc._pc, 0x0004)
         
+    def test_sub(self):
+        self.clear()
+        self._ram._m[0] = 0x92      # SUB D
+        self._ram._m[1] = 0x93      # SUB E
+        self._proc._a = 0xff
+        self._proc._d = 0xfe
+        self._proc._e = 0x04
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x01)
+        self.assertFalse(self._proc._flags.cy)
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0xfd)
+        self.assertTrue(self._proc._flags.cy)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_sbb(self):
+        self.clear()
+        self._ram._m[0] = 0x9a      # SBB D
+        self._ram._m[1] = 0x9b      # SBB E
+        self._proc._a = 0xff
+        self._proc._d = 0xfe
+        self._proc._e = 0x04
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x01)
+        self.assertFalse(self._proc._flags.cy)
+        self._proc._flags.cy = True
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0xfc)
+        self.assertTrue(self._proc._flags.cy)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_sbi(self):
+        self.clear()
+        self._ram._m[0] = 0xde      # SBI FE
+        self._ram._m[1] = 0xfe
+        self._ram._m[2] = 0xde      # SBI 04
+        self._ram._m[3] = 0x04
+        self._proc._a = 0xff
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x01)
+        self.assertFalse(self._proc._flags.cy)
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0xfd)
+        self.assertTrue(self._proc._flags.cy)
+        self.assertEqual(self._proc._pc, 0x0004)
+        
     def test_ora(self):
         self.clear()
         self._ram._m[0] = 0xb4      # ORA H
@@ -181,6 +227,39 @@ class Test_i8080(unittest.TestCase):
         self.assertEqual(self._proc._pc, 0x0002)
         self.assertEqual(self._proc._a, 0x20)
         self.assertFalse(self._proc._flags.cy)
+        
+    def test_xra(self):
+        self.clear()
+        self._ram._m[0] = 0xad      # XRA L
+        self._proc._a = 0x14
+        self._proc._l = 0x26
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0001)
+        self.assertEqual(self._proc._a, 0x32)
+        self.assertFalse(self._proc._flags.cy)
+        
+    def test_xri(self):
+        self.clear()
+        self._ram._m[0] = 0xee      # XRI E8
+        self._ram._m[1] = 0xe8
+        self._proc._a = 0x21
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0002)
+        self.assertEqual(self._proc._a, 0xc9)
+        self.assertFalse(self._proc._flags.cy)
+        
+    def test_cmp(self):
+        self.clear()
+        self._ram._m[0] = 0xb8      # CMP B
+        self._ram._m[1] = 0xb9      # CMP C
+        self._proc._a = 0x15
+        self._proc._b = 0xf8
+        self._proc._c = 0x04
+        self._proc._step()
+        self.assertTrue(self._proc._flags.cy)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.cy)
+        self.assertEqual(self._proc._pc, 0x0002)
         
     def test_push(self):
         self.clear()
@@ -251,6 +330,122 @@ class Test_i8080(unittest.TestCase):
         self._ram._m[2] = 0xfe
         self._proc._step()
         self.assertEqual(self._proc._pc, 0xfe01)
+        
+    def test_jz(self):
+        self.clear()
+        self._ram._m[0] = 0xca      # JZ 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xca      # JZ 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._flags.z = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.z = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        
+    def test_jc(self):
+        self.clear()
+        self._ram._m[0] = 0xda      # JC 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xda      # JC 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._flags.cy = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.cy = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        
+    def test_jm(self):
+        self.clear()
+        self._ram._m[0] = 0xfa      # JM 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xfa      # JM 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._flags.s = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.s = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        
+    def test_jpe(self):
+        self.clear()
+        self._ram._m[0] = 0xea      # JPE 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xea      # JPE 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._flags.p = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.p = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        
+    def test_jnz(self):
+        self.clear()
+        self._ram._m[0] = 0xc2      # JNZ 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xc2      # JNZ 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.z = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        
+    def test_jnc(self):
+        self.clear()
+        self._ram._m[0] = 0xd2      # JNC 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xd2      # JNC 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.cy = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        
+    def test_jp(self):
+        self.clear()
+        self._ram._m[0] = 0xf2      # JP 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xf2      # JP 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.s = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
+        
+    def test_jpo(self):
+        self.clear()
+        self._ram._m[0] = 0xe2      # JPO 0008
+        self._ram._m[1] = 0x08
+        self._ram._m[2] = 0x00
+        self._ram._m[8] = 0xe2      # JPO 0010
+        self._ram._m[9] = 0x10
+        self._ram._m[10] = 0x00
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.p = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000b)
         
     def test_call(self):
         self.clear()
