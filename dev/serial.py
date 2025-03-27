@@ -1,10 +1,19 @@
+"""
+Serial communications devices
+"""
 
 import socket
+import time
 from threading import Thread, Lock
+
+from pqueue import PQueue
         
 
 class mc6850(object):
-
+    """
+    Motorolla 6850 serial device
+    """
+    
     def __init__(self, port, proc):
         self._proc = proc
         self._escape = ord('~')
@@ -12,7 +21,9 @@ class mc6850(object):
         self._status_reg = 0x02
         self._conn = SerialConnection(port)
         self._lock = Lock()
-        Thread(target=self._rx_wait).start()
+        self._tx_queue = PQueue(1)
+        Thread(target = self._rx_wait).start()
+        Thread(target = self._tx_wait).start()
 
     def size(self):
         return 2
@@ -23,8 +34,8 @@ class mc6850(object):
             self._status_reg &= 0xfd
             self._lock.release()
             #print("TX: %s" % chr(value))
-            self._conn.write(value)
-            Thread(target = self._tx_wait).start()
+            self._tx_queue.put(value)
+            time.sleep(0.0)
         else:
             if (value & 0x03) == 0x03:
                 #print("mc6850 reset")
@@ -34,16 +45,27 @@ class mc6850(object):
                 self._lock.release()
 
     def _tx_wait(self):
-        self._lock.acquire()
-        self._status_reg |= 0x02
-        self._lock.release()
+        wr = self._conn.write
+        lk = self._lock
+        gf = self._tx_queue.get
+        while True:
+            x = gf(2.0)
+            if x is None:
+                if self._proc.halted():
+                    return
+            else:
+                lk.acquire()
+                self._status_reg |= 0x02
+                lk.release()
+                wr(x)
 
     def read8(self, addr):
         if addr == 1:
             self._lock.acquire()
             self._status_reg &= 0xfe
+            x = self._rx_data
             self._lock.release()
-            return self._rx_data
+            return x
         else:
             return self._status_reg
 
@@ -64,7 +86,10 @@ class mc6850(object):
 
 
 class i8251(object):
-
+    """
+    Intel 8251 serial device
+    """
+    
     def __init__(self, port, proc):
         self._proc = proc
         self._escape = ord('~')
@@ -75,7 +100,9 @@ class i8251(object):
         self._tx_enable = False
         self._conn = SerialConnection(port)
         self._lock = Lock()
+        self._tx_queue = PQueue(1)
         Thread(target=self._rx_wait).start()
+        Thread(target=self._tx_wait).start()
 
     def size(self):
         return 2
@@ -89,8 +116,8 @@ class i8251(object):
             self._status_reg &= 0xfa
             self._lock.release()
             #print("TX: %s" % chr(value))
-            self._conn.write(value)
-            Thread(target = self._tx_wait).start()
+            self._tx_queue.put(value)
+            time.sleep(0.0)
         else:
             if self._mode_sel:
                 if not (value & 0x03):
@@ -109,31 +136,45 @@ class i8251(object):
                     #print("i8251 enable", self._tx_enable, self._rx_enable)
 
     def _tx_wait(self):
-        self._lock.acquire()
-        self._status_reg |= 0x05
-        self._lock.release()
+        gf = self._tx_queue.get
+        wr = self._conn.write
+        lk = self._lock
+        while True:
+            value = gf(2.0)
+            if value is None:
+                if self._proc.halted():
+                    return
+            else:
+                lk.acquire()
+                self._status_reg |= 0x05
+                lk.release()
+                wr(value)
 
     def read8(self, addr):
         if addr == 0:
             self._lock.acquire()
             self._status_reg &= 0xfd
+            x = self._rx_data
             self._lock.release()
-            return self._rx_data
+            return x
         else:
             return self._status_reg
 
     def _rx_wait(self):
+        rd = self._conn.read
+        lk = self._lock
+        es = self._escape
         while True:
             try:
-                c = self._conn.read()
-                if c == self._escape:
+                c = rd()
+                if c == es:
                     self._proc.halt()
                     return
                 if self._rx_enable:
+                    lk.acquire()
                     self._rx_data = c
-                    self._lock.acquire()
                     self._status_reg |= 0x02
-                    self._lock.release()
+                    lk.release()
             except socket.timeout:
                 if self._proc.halted():
                     return
