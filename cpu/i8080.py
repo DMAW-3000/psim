@@ -173,17 +173,18 @@ class i8080(Processor):
                 self.halt()
                 return
             self._reg_write(ddd, self._reg_read(sss))
-            self._pc = pc + 1
+            pci = 1
         elif t == 0x00:
             f = self._ldst_map.get(op, self._default_ldst)
-            self._pc = f(op, pc) + pc
+            pci = f(op, pc)
         elif t == 0x80:
             f = self._arith_map[(op & 0x38) >> 3]
             f(op & 0x07)
-            self._pc = pc + 1
+            pci = 1
         else:
             f = self._cntl_map.get(op, self._default_cntl)
-            f(op, pc)
+            pci = f(op, pc)
+        self._pc = (self._pc + pci) & 0xffff
 
     def _check_break(self, blist):
         return self._pc in blist
@@ -468,23 +469,25 @@ class i8080(Processor):
     def _JMP(self, op, pc):
         mr = self._mr
         self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
+        return 0
         
     def _CALL(self, op, pc):
         an = (pc + 3) & 0xffff
         sp = self._sp
         mw = self._mw
         mr = self._mr
-        pc = mr(pc + 1) + (mr(pc + 2) << 8)
+        self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
         mw(sp - 1, an >> 8)
         mw(sp - 2, an & 0xff)
         self._sp = (sp - 2) & 0xffff 
-        self._pc = pc
+        return 0
 
     def _RET(self, op, pc):
         sp = self._sp
         mr = self._mr
         self._pc = mr(sp) + (mr(sp + 1) << 8)
         self._sp = (sp + 2) & 0xffff
+        return 0
         
     def _ADI(self, op, pc):
         f = self._flags
@@ -496,7 +499,7 @@ class i8080(Processor):
         t &= 0xff
         self._a = t
         self._set_flags(t)
-        self._pc = pc + 2
+        return 2
 
     def _ACI(self, op, pc):
         f = self._flags
@@ -509,7 +512,7 @@ class i8080(Processor):
         t &= 0xff
         self._a = t
         self._set_flags(t)
-        self._pc = pc + 2
+        return 2
 
     def _SUI(self, op, pc):
         f = self._flags
@@ -521,7 +524,7 @@ class i8080(Processor):
         t &= 0xff
         self._a = t
         self._set_flags(t)
-        self._pc = pc + 2
+        return 2
 
     def _SBI(self, op, pc):
         f = self._flags
@@ -534,7 +537,7 @@ class i8080(Processor):
         t &= 0xff
         self._a = t
         self._set_flags(t)
-        self._pc = pc + 2
+        return 2
 
     def _CPI(self, op, pc):
         f = self._flags
@@ -544,36 +547,37 @@ class i8080(Processor):
         f.cy = (t < 0)
         f.ac = (((x & 0x0f) - (y & 0x0f)) < 0)
         self._set_flags(t & 0xff)
-        self._pc = pc + 2
+        return 2
 
     def _IN(self, op, pc): 
         self._a = self._io.read8(self._mr(pc + 1))
-        self._pc = pc + 2
+        return 2
 
     def _OUT(self, op, pc):
         self._io.write8(self._mr(pc + 1), self._a)
-        self._pc = pc + 2
+        return 2
 
     def _ANI(self, op, pc): 
         self._a = t = self._a & self._mr(pc + 1)
         self._flags.cy = False
         self._set_flags(t)
-        self._pc = pc + 2
+        return 2
 
     def _ORI(self, op, pc):
         self._a = t = self._a | self._mr(pc + 1)
         self._flags.cy = False
         self._set_flags(t)
-        self._pc = pc + 2
+        return 2
 
     def _XRI(self, op, pc):
         self._a = t = self._a ^ self._mr(pc + 1)
         self._flags.cy = False
         self._set_flags(t)
-        self._pc = pc + 2
+        return 2
 
     def _PCHL(self, op, pc):
         self._pc = (self._h << 8) + self._l
+        return 0
 
     def _XCHG(self, op, pc):
         th = self._h
@@ -582,7 +586,7 @@ class i8080(Processor):
         self._l = self._e
         self._d = th
         self._e = tl
-        self._pc = pc + 1
+        return 1
 
     def _XTHL(self, op, pc):
         sp = self._sp
@@ -594,7 +598,7 @@ class i8080(Processor):
         self._h = mr(sp + 1)
         mw(sp, tl)
         mw(sp + 1, th)
-        self._pc = pc + 1
+        return 1
 
     def _PUSHPSW(self, op, pc):
         f = self._flags
@@ -614,7 +618,7 @@ class i8080(Processor):
         mw(sp - 1, self._a)
         mw(sp - 2, p)
         self._sp = (sp - 2) & 0xffff
-        self._pc = pc + 1
+        return 1
 
     def _POPPSW(self, op, pc):
         f = self._flags
@@ -628,19 +632,19 @@ class i8080(Processor):
         f.z  = (p & 0x40) != 0x00
         f.s  = (p & 0x80) != 0x00
         self._sp = (sp + 2) & 0xffff
-        self._pc = pc + 1
+        return 1
 
     def _SPHL(self, op, pc):
         self._sp = (self._h << 8) + self._l
-        self._pc = pc + 1
+        return 1
 
     def _EI(self, op, pc):
         self._ie = True
-        self._pc = pc + 1
+        return 1
 
     def _DI(self, op, pc):
         self._ie = False
-        self._pc = pc + 1
+        return 1
 
     def _default_cntl(self, op, pc):
         f = self._default_cntl_map[op & 0x0f]
@@ -648,7 +652,7 @@ class i8080(Processor):
             print("unknown opcode: %02x" % op)
             self.halt()
             return
-        f(op, pc, self._sp)
+        return f(op, pc, self._sp)
         
     def _PUSH(self, op, pc, sp):
         mw = self._mw
@@ -656,7 +660,7 @@ class i8080(Processor):
         mw(sp - 1, x1)
         mw(sp - 2, x0)
         self._sp = (sp - 2) & 0xffff
-        self._pc = pc + 1
+        return 1
         
     def _POP(self, op, pc, sp):
         mr = self._mr
@@ -664,14 +668,15 @@ class i8080(Processor):
         x1 = mr(sp + 1)
         self._sp = (sp + 2) & 0xffff
         self._rp_write((op & 0x30) >> 4, x0, x1)
-        self._pc = pc + 1
+        return 1
         
     def _Jc(self, op, pc, sp): 
         if self._check_flags((op & 0x38) >> 3):
             mr = self._mr
             self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
+            return 0
         else:
-            self._pc = pc + 3
+            return 3
             
     def _Cc(self, op, pc, sp):
         if self._check_flags((op & 0x38) >> 3):
@@ -682,16 +687,18 @@ class i8080(Processor):
             mw(sp - 2, an & 0xff)
             self._sp = (sp - 2) & 0xffff
             self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
+            return 0
         else:
-            self._pc = pc + 3
+            return 3
             
     def _Rc(self, op, pc, sp):
         if self._check_flags((op & 0x38) >> 3):
             mr = self._mr
             self._pc = mr(sp) + (mr(sp + 1) << 8) 
             self._sp = (sp + 2) & 0xffff
+            return 0
         else:
-            self._pc = pc + 1
+            return 1
             
     def _RST(self, op, pc, sp):
         if not self._intr_pc:
@@ -702,7 +709,8 @@ class i8080(Processor):
         mw(sp - 1, pc >> 8)
         mw(sp - 2, pc & 0xff)
         self._sp = (sp - 2) & 0xffff
-        self._pc = op & 0x38         
+        self._pc = op & 0x38
+        return 0
             
     def _set_flags(self, value):
         f = self._flags
