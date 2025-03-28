@@ -70,16 +70,19 @@ class mc6850(object):
             return self._status_reg
 
     def _rx_wait(self):
+        rd = self._conn.read
+        lk = self._lock
+        es = self._escape
         while True:
             try:
-                c = self._conn.read()
-                if c == self._escape:
+                c = rd()
+                if c == es:
                     self._proc.halt()
                     return
+                lk.acquire()
                 self._rx_data = c
-                self._lock.acquire()
                 self._status_reg |= 0x01
-                self._lock.release()
+                lk.release()
             except socket.timeout:
                 if self._proc.halted():
                     return
