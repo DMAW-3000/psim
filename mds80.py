@@ -30,8 +30,10 @@ from dev.disk import sys_map, DiskChanger
 
 from threading import Thread, Lock
 from pqueue import PQueue
+
 import os
 import socket
+import time
 
 RAM_ADDR = 0x0000
 RAM_SIZE = 0x8000
@@ -144,15 +146,17 @@ class MDS_Tty(i8251):
 
 class MDS_FloppyController(object):
 
-    def __init__(self, memAs, dsk0, dsk1):
+    def __init__(self, memAs, dsk0, dsk1, proc):
         self._write_buf = bytearray(128)
         self._mem = memAs
         self._disk_list = (dsk0, dsk1)
         self._save_lo = 0x00
-        self._cmd_addr = 0x0000
         self._dstat_reg = 0x00
         self._rtype_reg = 0x00
         self._rbyte_reg = 0x00
+        self._proc = proc
+        self._queue = PQueue(1)
+        Thread(target=self._dma_xfer).start()
 
     def size(self):
         return 4
@@ -176,46 +180,51 @@ class MDS_FloppyController(object):
         if addr == 1:
             self._save_lo = value
         elif addr == 2:
-            self._cmd_addr = (value << 8) + self._save_lo
-            Thread(target=self._dma_xfer).start()
+            self._queue.put((value << 8) + self._save_lo)
+            time.sleep(0.0)            
 
     def _dma_xfer(self):
         mr = self._mem.read8
         mw = self._mem.write8
-        caddr = self._cmd_addr
-        op = mr(caddr)
-        func = mr(caddr + 1)
-        nsec = mr(caddr + 2)
-        track = mr(caddr + 3)
-        sec = mr(caddr + 4) & 0x1f
-        a0 = mr(caddr + 5)
-        a1 = mr(caddr + 6)
-        maddr = (a1 << 8) + a0
-        if ((func & 0x30) == 0x00):
-            dsk = self._disk_list[0]
-        else:
-            dsk = self._disk_list[1]
-        if dsk is None:
+        while True:
+            caddr = self._queue.get(2.0)
+            if caddr is None:
+                if self._proc.halted():
+                    return
+                else:
+                    continue
+            op = mr(caddr)
+            func = mr(caddr + 1)
+            nsec = mr(caddr + 2)
+            track = mr(caddr + 3)
+            sec = mr(caddr + 4) & 0x1f
+            maddr = mr(caddr + 5) + (mr(caddr + 6) << 8)
+            if ((func & 0x30) == 0x00):
+                dsk = self._disk_list[0]
+            else:
+                dsk = self._disk_list[1]
+            if dsk is None:
+                self._rtype_reg |= 0x02
+                self._rbyte_reg |= 0x01
+                self._dstat_reg |= 0x04
+                return
+            func &= 0x0f
+            nbytes = dsk.nbytes()
+            if func == 4:
+                #print("FD: read sec %02d %02d" % (track, sec))
+                buf = dsk.read_sec(track, sec)
+                for n in range(nbytes):
+                    mw(maddr + n, buf[n])
+            elif func == 6:
+                #print("FD write sec %02d %02d" % (track, sec))
+                buf = self._write_buf
+                for n in range(nbytes):
+                    buf[n] = mr(maddr + n)
+                dsk.write_sec(track, sec, buf)
+            else:
+                raise RuntimeError("FD: unknown function %d" % func)
+            self._rtype_reg = 0x00
             self._dstat_reg |= 0x04
-            self._rtype_reg |= 0x02
-            self._rbyte_reg |= 0x01
-            return
-        func &= 0x0f
-        if func == 4:
-            #print("FD: read sec %02d %02d" % (track, sec))
-            buf = dsk.read_sec(track, sec)
-            for n in range(dsk.nbytes()):
-                mw(maddr + n, buf[n])
-        elif func == 6:
-            #print("FD write sec %02d %02d" % (track, sec))
-            buf = self._write_buf
-            for n in range(dsk.nbytes()):
-                buf[n] = mr(maddr + n)
-            dsk.write_sec(track, sec, buf)
-        else:
-            raise RuntimeError("FD: unknown function %d" % func)
-        self._rtype_reg = 0x00
-        self._dstat_reg |= 0x04
 
 
 class MDS_InterruptControl(object):
@@ -359,12 +368,12 @@ class MDS_System(object):
 
         dsk0 = FloppyDisk(*diskMap, os.path.join(appDir, "fd0.fdd"))
         dsk1 = FloppyDisk(*diskMap, os.path.join(appDir, "fd1.fdd"))
-        self._fdc0 = MDS_FloppyController(self._mem, dsk0, dsk1)
+        self._fdc0 = MDS_FloppyController(self._mem, dsk0, dsk1, self.proc)
         self._io.add(FLOPPY0_IO, self._fdc0, "FDC0")
 
         dsk2 = FloppyDisk(*diskMap, os.path.join(appDir, "fd2.fdd"))
         dsk3 = FloppyDisk(*diskMap, os.path.join(appDir, "fd3.fdd"))
-        self._fdc1 = MDS_FloppyController(self._mem, dsk2, dsk3)
+        self._fdc1 = MDS_FloppyController(self._mem, dsk2, dsk3, self.proc)
         self._io.add(FLOPPY1_IO, self._fdc1, "FDC1")
 
         self._int_cntl = MDS_InterruptControl(self.proc)
