@@ -176,8 +176,7 @@ class i8080(Processor):
         elif t == 0x00:
             pci = self._ldst_map.get(op, self._default_ldst)(op)
         elif t == 0x80:
-            self._arith_map[(op & 0x38) >> 3](op & 0x07)
-            pci = 1
+            pci = self._arith_map[(op & 0x38) >> 3](op & 0x07)
         else:
             pci = self._cntl_map.get(op, self._default_cntl)(op)
         self._pc = (self._pc + pci) & 0xffff
@@ -407,6 +406,7 @@ class i8080(Processor):
         x0 &= 0xff
         self._a = x0
         self._set_flags(x0)
+        return 1
 
     def _ADC(self, sss):
         f = self._flags
@@ -419,6 +419,7 @@ class i8080(Processor):
         x0 &= 0xff
         self._a = x0
         self._set_flags(x0)
+        return 1
 
     def _SUB(self, sss):
         f = self._flags
@@ -430,6 +431,7 @@ class i8080(Processor):
         x0 &= 0xff
         self._a = x0
         self._set_flags(x0)
+        return 1
 
     def _SBB(self, sss):
         f = self._flags
@@ -442,21 +444,25 @@ class i8080(Processor):
         x0 &= 0xff
         self._a = x0 
         self._set_flags(x0)
+        return 1
 
     def _ORA(self, sss):
         self._a = t = self._a | self._reg_read(sss)
         self._flags.cy = False
         self._set_flags(t)
+        return 1
         
     def _ANA(self, sss):
         self._a = t = self._a & self._reg_read(sss)
         self._flags.cy = False
         self._set_flags(t)
+        return 1
 
     def _XRA(self, sss):
         self._a = t = self._a ^ self._reg_read(sss)
         self._flags.cy = False
         self._set_flags(t)
+        return 1
         
     def _CMP(self, sss):
         f = self._flags
@@ -466,6 +472,7 @@ class i8080(Processor):
         f.cy = (t < 0)
         f.ac = (((x & 0x0f) - (y & 0x0f)) < 0)
         self._set_flags(t & 0xff)
+        return 1
 
     def _JMP(self, op):
         mr = self._mr
