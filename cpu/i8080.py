@@ -174,15 +174,12 @@ class i8080(Processor):
             self._reg_write(ddd, self._reg_read(sss))
             pci = 1
         elif t == 0x00:
-            f = self._ldst_map.get(op, self._default_ldst)
-            pci = f(op)
+            pci = self._ldst_map.get(op, self._default_ldst)(op)
         elif t == 0x80:
-            f = self._arith_map[(op & 0x38) >> 3]
-            f(op & 0x07)
+            self._arith_map[(op & 0x38) >> 3](op & 0x07)
             pci = 1
         else:
-            f = self._cntl_map.get(op, self._default_cntl)
-            pci = f(op)
+            pci = self._cntl_map.get(op, self._default_cntl)(op)
         self._pc = (self._pc + pci) & 0xffff
 
     def _check_break(self, blist):
