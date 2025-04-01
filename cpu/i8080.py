@@ -659,9 +659,9 @@ class i8080(Processor):
     def _default_cntl(self, op):
         f = self._default_cntl_map[op & 0x0f]
         if f is None:
-            print("unknown opcode: %02x" % op)
+            print("ERROR: unknown opcode: %02x" % op)
             self.halt()
-            return
+            return 0
         return f(op)
         
     def _PUSH(self, op):
