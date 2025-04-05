@@ -218,8 +218,7 @@ SETBPB:     ; 0267
 	DAD B     ; struct offset
 	MOV C,M   ; to (B),C
 __L00008:     ; 0275
-	STC
-	CMC
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -230,13 +229,13 @@ __L00008:     ; 0275
 	JNZ __L00008  ; more SHL
 	LXI B,00880H  ; OPT MVICB
 	LXI H,00000H  ; * init
-__L00009:     ; 0287
+__L00009:     ; 0286
 	MOV A,C
 	RAR
 	MOV C,A
 	JNC __L00010  ; * check bits of right arg
 	DAD D
-__L00010:     ; 028e
+__L00010:     ; 028d
 	XCHG
 	DAD H
 	XCHG
@@ -244,22 +243,21 @@ __L00010:     ; 028e
 	JNZ __L00009 ;  * more bits
 	SHLD _STATUS_BPB ; assign
 	RET  ; proc return
-SELECTDISK:     ; 0299
+SELECTDISK:     ; 0298
 	LXI H,_SELECTDISK_D  ; store proc arg 1
 	MOV M,E
 	LXI H,_SELECTDISK_D  ; load var left
 	MOV E,M   ; to E
 	CALL SELECT  ; proc call
 	JMP SETBPB  ; OPT CALLRET
-GETALLOC:     ; 02a7
+GETALLOC:     ; 02a6
 	XCHG
 	SHLD _GETALLOC_I  ; store proc arg 1
 	LHLD _GETALLOC_I ; load var left
 	XCHG    ; to D,E
 	MVI C,003H  ; load const right
-__L00011:     ; 02b1
-	STC
-	CMC
+__L00011:     ; 02b0
+	ORA A  ; clear carry
 	MOV A,D
 	RAR
 	MOV D,A
@@ -287,7 +285,7 @@ __L00011:     ; 02b1
 	MOV C,L  ; result to B,C
 	MOV B,H
 	POP D  ; restore left binary
-__L00012:     ; 02d8
+__L00012:     ; 02d6
 	MOV A,E
 	RLC  ; ROL
 	MOV E,A
@@ -295,20 +293,20 @@ __L00012:     ; 02d8
 	JNZ __L00012  ; more ROL
 	RET  ; proc return
 	RET  ; proc return
-COMPARE:     ; 02e1
+COMPARE:     ; 02df
 	XCHG
 	SHLD _COMPARE_A  ; store proc arg 1
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00015  ; DO first iter
-__L00013:     ; 02eb
+__L00013:     ; 02e9
 	MVI E,003H  ; load const left
 	LDA _COMPARE_I  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00015   ; = 
 	JNC __L00014  ; > DO complete
-__L00015:     ; 02f8
+__L00015:     ; 02f6
 	STA _COMPARE_I  ; DO assign
 	LXI H,_COMPARE_I  ; load var left
 	MOV E,M   ; to E
@@ -329,20 +327,20 @@ __L00015:     ; 02f8
 	JZ __L00016 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00017
-__L00016:     ; 031d
+__L00016:     ; 031b
 	MVI E,000H  ; rel false left
-__L00017:     ; 031f
+__L00017:     ; 031d
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00018  ; skip if
 	MVI E,000H  ; load const left
 	RET  ; proc return
-__L00018:     ; 0327
+__L00018:     ; 0325
 	JMP __L00013  ; END
-__L00014:     ; 032a
+__L00014:     ; 0328
 	MVI E,001H  ; load const left
 	RET  ; proc return
-SETACC:     ; 032d
+SETACC:     ; 032b
 	LXI H,_SETACC_B  ; store proc arg 1
 	MOV M,E
 	LXI H,_SETACC_B  ; load var left
@@ -363,8 +361,8 @@ SETACC:     ; 032d
 	LXI H,_SCAN_I   ; assign
 	MOV M,E    ; from E
 	RET  ; proc return
-SCAN:     ; 034f
-__L00019:     ; 034f
+SCAN:     ; 034d
+__L00019:     ; 034d
 	LXI H,_STATUS_IBP  ; load var left
 	MOV E,M   ; to E
 	MVI D,000H  ; zero pad index MSB
@@ -376,9 +374,9 @@ __L00019:     ; 034f
 	JNZ __L00021 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00022
-__L00021:     ; 0365
+__L00021:     ; 0363
 	MVI E,000H  ; rel false left
-__L00022:     ; 0367
+__L00022:     ; 0365
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00020  ; skip while
@@ -390,11 +388,11 @@ __L00022:     ; 0367
 	LXI H,_STATUS_IBP   ; assign
 	MOV M,E    ; from E
 	JMP __L00019  ; END
-__L00020:     ; 037b
+__L00020:     ; 0379
 	MVI E,000H  ; load const left
 	LXI H,_SCAN_I   ; assign
 	MOV M,E    ; from E
-__L00023:     ; 0381
+__L00023:     ; 037f
 	LXI H,_SCAN_I  ; load var left
 	MOV E,M   ; to E
 	MVI A,004H  ; OPT MVICA
@@ -403,9 +401,9 @@ __L00023:     ; 0381
 	JZ __L00025
 	MVI E,001H  ; rel true left
 	JMP __L00026
-__L00025:     ; 0393
+__L00025:     ; 0391
 	MVI E,000H  ; rel false left
-__L00026:     ; 0395
+__L00026:     ; 0393
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00024  ; skip while
@@ -422,9 +420,9 @@ __L00026:     ; 0395
 	JNC __L00027
 	MVI E,001H  ; rel true left
 	JMP __L00028
-__L00027:     ; 03b4
+__L00027:     ; 03b2
 	MVI E,000H  ; rel false left
-__L00028:     ; 03b6
+__L00028:     ; 03b4
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00029  ; skip if
@@ -432,21 +430,21 @@ __L00028:     ; 03b6
 	MOV E,M   ; to E
 	CALL SETACC  ; proc call
 	JMP __L00030  ; skip else
-__L00029:     ; 03c5
+__L00029:     ; 03c3
 	MVI E,020H  ; load const left
 	CALL SETACC  ; proc call
-__L00030:     ; 03ca
+__L00030:     ; 03c8
 	LXI H,_SCAN_B  ; load var left
 	MOV E,M   ; to E
 	MVI A,001H  ; OPT MVICA
 	CMP E   ; <=
 	JC __L00031
-__L00033:     ; 03d4
+__L00033:     ; 03d2
 	MVI E,001H  ; rel true left
 	JMP __L00032
-__L00031:     ; 03d9
+__L00031:     ; 03d7
 	MVI E,000H  ; rel false left
-__L00032:     ; 03db
+__L00032:     ; 03d9
 	PUSH D ; save left binary
 	LXI H,_SCAN_B  ; load var left
 	MOV E,M   ; to E
@@ -455,9 +453,9 @@ __L00032:     ; 03db
 	JNZ __L00034 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00035
-__L00034:     ; 03eb
+__L00034:     ; 03e9
 	MVI C,000H  ; rel false right
-__L00035:     ; 03ed
+__L00035:     ; 03eb
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -470,9 +468,9 @@ __L00035:     ; 03ed
 	JNZ __L00036 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00037
-__L00036:     ; 0401
+__L00036:     ; 03ff
 	MVI C,000H  ; rel false right
-__L00037:     ; 0403
+__L00037:     ; 0401
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -485,9 +483,9 @@ __L00037:     ; 0403
 	JNZ __L00038 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00039
-__L00038:     ; 0417
+__L00038:     ; 0415
 	MVI C,000H  ; rel false right
-__L00039:     ; 0419
+__L00039:     ; 0417
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -500,9 +498,9 @@ __L00039:     ; 0419
 	JNZ __L00040 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00041
-__L00040:     ; 042d
+__L00040:     ; 042b
 	MVI C,000H  ; rel false right
-__L00041:     ; 042f
+__L00041:     ; 042d
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -515,9 +513,9 @@ __L00041:     ; 042f
 	JNZ __L00042 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00043
-__L00042:     ; 0443
+__L00042:     ; 0441
 	MVI C,000H  ; rel false right
-__L00043:     ; 0445
+__L00043:     ; 0443
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -530,9 +528,9 @@ __L00043:     ; 0445
 	JNZ __L00044 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00045
-__L00044:     ; 0459
+__L00044:     ; 0457
 	MVI C,000H  ; rel false right
-__L00045:     ; 045b
+__L00045:     ; 0459
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -545,9 +543,9 @@ __L00045:     ; 045b
 	JNZ __L00046 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00047
-__L00046:     ; 046f
+__L00046:     ; 046d
 	MVI C,000H  ; rel false right
-__L00047:     ; 0471
+__L00047:     ; 046f
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -565,7 +563,7 @@ __L00047:     ; 0471
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
 	JMP __L00049  ; skip else
-__L00048:     ; 048c
+__L00048:     ; 048a
 	LXI H,_STATUS_IBP  ; load var left
 	MOV E,M   ; to E
 	MVI A,001H  ; OPT MVICA
@@ -573,9 +571,9 @@ __L00048:     ; 048c
 	MOV E,A  ; result to E
 	LXI H,_STATUS_IBP   ; assign
 	MOV M,E    ; from E
-__L00049:     ; 0498
+__L00049:     ; 0496
 	JMP __L00023  ; END
-__L00024:     ; 049b
+__L00024:     ; 0499
 	LXI H,_STATUS_IBP  ; load var left
 	MOV E,M   ; to E
 	MVI A,001H  ; OPT MVICA
@@ -584,7 +582,7 @@ __L00024:     ; 049b
 	LXI H,_STATUS_IBP   ; assign
 	MOV M,E    ; from E
 	RET  ; proc return
-PDECIMAL:     ; 04a8
+PDECIMAL:     ; 04a6
 	XCHG
 	SHLD _PDECIMAL_V  ; store proc arg 1
 	MOV L,C
@@ -593,7 +591,7 @@ PDECIMAL:     ; 04a8
 	MVI E,001H  ; load const left
 	LXI H,_PDECIMAL_ZEROSUP   ; assign
 	MOV M,E    ; from E
-__L00050:     ; 04b7
+__L00050:     ; 04b5
 	LHLD _PDECIMAL_PREC ; load var left
 	XCHG    ; to D,E
 	LXI B,00000H  ; OPT MVICB
@@ -601,16 +599,16 @@ __L00050:     ; 04b7
 	CMP E  ; <>
 	JZ __L00054  ; =
 	JMP __L00055 ; !=
-__L00054:     ; 04c6
+__L00054:     ; 04c4
 	MOV A,B
 	CMP D  ; <>
 	JZ __L00052 ; =
-__L00055:     ; 04cb
+__L00055:     ; 04c9
 	MVI E,001H  ; rel true left
 	JMP __L00053
-__L00052:     ; 04d0
+__L00052:     ; 04ce
 	MVI E,000H  ; rel false left
-__L00053:     ; 04d2
+__L00053:     ; 04d0
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00051  ; skip while
@@ -620,7 +618,7 @@ __L00053:     ; 04d2
 	MOV C,L
 	MOV B,H ; to B,C
 	LXI H,00000H  ; / init
-__L00056:     ; 04e3
+__L00056:     ; 04e1
 	MOV A,E
 	SUB C
 	MOV E,A
@@ -630,7 +628,7 @@ __L00056:     ; 04e3
 	MOV D,A
 	INX H
 	JMP __L00056  ; more /
-__L00057:     ; 04f0
+__L00057:     ; 04ee
 	XCHG  ; / result to D,E
 	LXI H,_PDECIMAL_D   ; assign
 	MOV M,E    ; from E
@@ -639,7 +637,7 @@ __L00057:     ; 04f0
 	LHLD _PDECIMAL_PREC ; load var right
 	MOV C,L
 	MOV B,H ; to B,C
-__L00058:     ; 04fe
+__L00058:     ; 04fc
 	MOV A,E
 	SUB C
 	MOV E,A
@@ -654,7 +652,7 @@ __L00058:     ; 04fe
 	XCHG    ; to D,E
 	LXI B,0000AH  ; OPT MVICB
 	LXI H,00000H  ; / init
-__L00059:     ; 0516
+__L00059:     ; 0514
 	MOV A,E
 	SUB C
 	MOV E,A
@@ -664,7 +662,7 @@ __L00059:     ; 0516
 	MOV D,A
 	INX H
 	JMP __L00059  ; more /
-__L00060:     ; 0523
+__L00060:     ; 0521
 	SHLD _PDECIMAL_PREC ; assign
 	LHLD _PDECIMAL_PREC ; load var left
 	XCHG    ; to D,E
@@ -673,16 +671,16 @@ __L00060:     ; 0523
 	CMP E  ; <>
 	JZ __L00063  ; =
 	JMP __L00064 ; !=
-__L00063:     ; 0535
+__L00063:     ; 0533
 	MOV A,B
 	CMP D  ; <>
 	JZ __L00061 ; =
-__L00064:     ; 053a
+__L00064:     ; 0538
 	MVI E,001H  ; rel true left
 	JMP __L00062
-__L00061:     ; 053f
+__L00061:     ; 053d
 	MVI E,000H  ; rel false left
-__L00062:     ; 0541
+__L00062:     ; 053f
 	LXI H,_PDECIMAL_ZEROSUP  ; load var right
 	MOV A,M  ; OPT MOVMCA
 	ANA E    ; & left
@@ -695,9 +693,9 @@ __L00062:     ; 0541
 	JNZ __L00065 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00066
-__L00065:     ; 0557
+__L00065:     ; 0555
 	MVI C,000H  ; rel false right
-__L00066:     ; 0559
+__L00066:     ; 0557
 	POP D  ; restore left binary
 	MOV A,C
 	ANA E    ; & left
@@ -707,7 +705,7 @@ __L00066:     ; 0559
 	JZ __L00067  ; skip if
 	CALL PRINTB  ; proc call
 	JMP __L00068  ; skip else
-__L00067:     ; 0568
+__L00067:     ; 0566
 	MVI E,000H  ; load const left
 	LXI H,_PDECIMAL_ZEROSUP   ; assign
 	MOV M,E    ; from E
@@ -717,11 +715,11 @@ __L00067:     ; 0568
 	ADD E    ; + left
 	MOV E,A  ; result to E
 	CALL PRINTCHAR  ; proc call
-__L00068:     ; 0579
+__L00068:     ; 0577
 	JMP __L00050  ; END
-__L00051:     ; 057c
+__L00051:     ; 057a
 	RET  ; proc return
-ADDBLOCK:     ; 057d
+ADDBLOCK:     ; 057b
 	XCHG
 	SHLD _ADDBLOCK_AK  ; store proc arg 1
 	MOV L,C
@@ -741,7 +739,7 @@ ADDBLOCK:     ; 057d
 	MOV M,E
 	INX H
 	MOV M,D  ; from D,E
-__L00069:     ; 059a
+__L00069:     ; 0598
 	LHLD _ADDBLOCK_AB  ; load based left
 	MOV E,M
 	INX H
@@ -752,16 +750,16 @@ __L00069:     ; 059a
 	JZ __L00073  ; =
 	JC __L00071  ; <
 	JMP __L00074 ; >
-__L00073:     ; 05ae
+__L00073:     ; 05ac
 	MOV A,E
 	CMP C  ; >=
 	JC __L00071  ; <
-__L00074:     ; 05b3
+__L00074:     ; 05b1
 	MVI E,001H  ; rel true left
 	JMP __L00072
-__L00071:     ; 05b8
+__L00071:     ; 05b6
 	MVI E,000H  ; rel false left
-__L00072:     ; 05ba
+__L00072:     ; 05b8
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00070  ; skip while
@@ -793,9 +791,9 @@ __L00072:     ; 05ba
 	INX H
 	MOV M,D  ; from D,E
 	JMP __L00069  ; END
-__L00070:     ; 05e9
+__L00070:     ; 05e7
 	RET  ; proc return
-COUNT:     ; 05ea
+COUNT:     ; 05e8
 	LXI H,_COUNT_MODE  ; store proc arg 1
 	MOV M,E
 	LXI D,00000H  ; OPT MVIED
@@ -808,7 +806,7 @@ COUNT:     ; 05ea
 	LXI D,00000H  ; OPT MVIED
 	XCHG     ; from D,E
 	JMP __L00077  ; DO first iter
-__L00075:     ; 0605
+__L00075:     ; 0603
 	LHLD DPBA  ; load struct based left
 	LXI D,00005H
 	DAD D     ; struct offset
@@ -822,12 +820,12 @@ __L00075:     ; 0605
 	JZ __L00078   ; =
 	JNC __L00076  ; > DO complete
 	JMP __L00077  ; <
-__L00078:     ; 061e
+__L00078:     ; 061c
 	MOV A,L
 	CMP E   ; DO <=
 	JZ __L00077   ; =
 	JNC __L00076  ; > DO complete
-__L00077:     ; 0626
+__L00077:     ; 0624
 	SHLD _COUNT_I  ; DO assign
 	LXI H,_COUNT_MODE  ; load var left
 	MOV E,M   ; to E
@@ -842,7 +840,7 @@ __L00077:     ; 0626
 	CALL GETALLOC  ; proc call
 	LXI H,_COUNT_BIT   ; assign
 	MOV M,E    ; from E
-__L00079:     ; 0641
+__L00079:     ; 063f
 	LXI H,_COUNT_BIT  ; load var left
 	MOV E,M   ; to E
 	MOV A,E
@@ -855,18 +853,18 @@ __L00079:     ; 0641
 	LXI D,_COUNT_KA  ; load ref left
 	LXI B,_COUNT_BA  ; load ref right
 	CALL ADDBLOCK  ; proc call
-__L00080:     ; 0658
+__L00080:     ; 0656
 	JMP __L00075  ; END
-__L00076:     ; 065b
+__L00076:     ; 0659
 	LHLD _COUNT_KA ; load var left
 	XCHG    ; to D,E
 	RET  ; proc return
-ABORTMSG:     ; 0660
+ABORTMSG:     ; 065e
 	LXI D,__L00081  ; load ref left
 	CALL PRINT  ; proc call
 	RET  ; proc return
-_USERSTATUS_UFCB	DB  03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,000H,000H,000H    ; 0667
-USERSTATUS:     ; 0676
+_USERSTATUS_UFCB	DB  03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,03FH,000H,000H,000H    ; 0665
+USERSTATUS:     ; 0674
 	LXI D,__L00082  ; load ref left
 	CALL PRINT  ; proc call
 	CALL GETUSER  ; proc call
@@ -879,14 +877,14 @@ USERSTATUS:     ; 0676
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00086  ; DO first iter
-__L00084:     ; 0694
+__L00084:     ; 0692
 	MVI E,01FH  ; LAST low left
 	LDA _USERSTATUS_I  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00086   ; = 
 	JNC __L00085  ; > DO complete
-__L00086:     ; 06a1
+__L00086:     ; 069f
 	STA _USERSTATUS_I  ; DO assign
 	MVI E,000H  ; load const left
 	PUSH D  ; save left array
@@ -898,12 +896,12 @@ __L00086:     ; 06a1
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
 	JMP __L00084  ; END
-__L00085:     ; 06b6
+__L00085:     ; 06b4
 	LXI D,MEMORY  ; load ref left
 	CALL SETDMA  ; proc call
 	LXI D,_USERSTATUS_UFCB  ; load ref left
 	CALL SEARCH  ; proc call
-__L00087:     ; 06c2
+__L00087:     ; 06c0
 	LXI H,_STATUS_DCNT  ; load var left
 	MOV E,M   ; to E
 	MVI A,0FFH  ; OPT MVICA
@@ -911,9 +909,9 @@ __L00087:     ; 06c2
 	JZ __L00089 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00090
-__L00089:     ; 06d1
+__L00089:     ; 06cf
 	MVI E,000H  ; rel false left
-__L00090:     ; 06d3
+__L00090:     ; 06d1
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00088  ; skip while
@@ -923,9 +921,8 @@ __L00090:     ; 06d3
 	ANA E    ; & left
 	MOV E,A  ; result to E
 	MVI C,005H  ; load const right
-__L00093:     ; 06e2
-	STC
-	CMC
+__L00093:     ; 06e0
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -942,9 +939,9 @@ __L00093:     ; 06e2
 	JZ __L00091 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00092
-__L00091:     ; 0701
+__L00091:     ; 06fe
 	MVI E,000H  ; rel false left
-__L00092:     ; 0703
+__L00092:     ; 0700
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00094  ; skip if
@@ -960,21 +957,21 @@ __L00092:     ; 0703
 	DAD D  ; arr offset
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
-__L00094:     ; 071b
+__L00094:     ; 0718
 	CALL SEARCHN  ; proc call
 	JMP __L00087  ; END
-__L00088:     ; 0721
+__L00088:     ; 071e
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00097  ; DO first iter
-__L00095:     ; 0727
+__L00095:     ; 0724
 	MVI E,01FH  ; LAST low left
 	LDA _USERSTATUS_I  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00097   ; = 
 	JNC __L00096  ; > DO complete
-__L00097:     ; 0734
+__L00097:     ; 0731
 	STA _USERSTATUS_I  ; DO assign
 	LXI H,_USERSTATUS_I  ; load var left
 	MOV E,M   ; to E
@@ -994,11 +991,11 @@ __L00097:     ; 0734
 	MVI D,000H  ; zero pad MSB
 	MVI B,000H  ; zero pad MSB
 	CALL PDECIMAL  ; proc call
-__L00098:     ; 0758
+__L00098:     ; 0755
 	JMP __L00095  ; END
-__L00096:     ; 075b
+__L00096:     ; 0758
 	RET  ; proc return
-PV:     ; 075c
+PV:     ; 0759
 	XCHG
 	SHLD _PV_V  ; store proc arg 1
 	CALL CRLF  ; proc call
@@ -1009,7 +1006,7 @@ PV:     ; 075c
 	MVI E,03AH  ; load const left
 	CALL PRINTCHAR  ; proc call
 	JMP PRINTB  ; OPT CALLRET
-DRIVESTATUS:     ; 0775
+DRIVESTATUS:     ; 0772
 	LXI D,__L00099  ; load ref left
 	CALL PRINT  ; proc call
 	CALL CSELECT  ; proc call
@@ -1026,9 +1023,8 @@ DRIVESTATUS:     ; 0775
 	LXI B,00002H
 	DAD B     ; struct offset
 	MOV C,M   ; to (B),C
-__L00101:     ; 079b
-	STC
-	CMC
+__L00101:     ; 0798
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1054,7 +1050,7 @@ __L00101:     ; 079b
 	MOV B,H ; to B,C
 	MVI A,010H  ; * count
 	LXI H,00000H  ; * init
-__L00105:     ; 07c5
+__L00105:     ; 07c1
 	PUSH PSW  ; * save count
 	MOV A,B
 	RAR
@@ -1064,7 +1060,7 @@ __L00105:     ; 07c5
 	MOV C,A
 	JNC __L00106  ; * check bits of right arg
 	DAD D
-__L00106:     ; 07d0
+__L00106:     ; 07cc
 	XCHG
 	DAD H
 	XCHG
@@ -1082,9 +1078,9 @@ __L00106:     ; 07d0
 	JNZ __L00103 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00104
-__L00103:     ; 07ee
+__L00103:     ; 07ea
 	MVI E,000H  ; rel false left
-__L00104:     ; 07f0
+__L00104:     ; 07ec
 	PUSH D ; save left binary
 	LHLD _DRIVESTATUS_RPB ; load var left
 	XCHG    ; to D,E
@@ -1093,16 +1089,16 @@ __L00104:     ; 07f0
 	CMP E  ; <>
 	JZ __L00109  ; =
 	JMP __L00110 ; !=
-__L00109:     ; 0800
+__L00109:     ; 07fc
 	MOV A,B
 	CMP D  ; <>
 	JZ __L00107 ; =
-__L00110:     ; 0805
+__L00110:     ; 0801
 	MVI C,001H  ; rel true right
 	JMP __L00108
-__L00107:     ; 080a
+__L00107:     ; 0806
 	MVI C,000H  ; rel false right
-__L00108:     ; 080c
+__L00108:     ; 0808
 	POP D  ; restore left binary
 	MOV A,C
 	ANA E    ; & left
@@ -1113,11 +1109,11 @@ __L00108:     ; 080c
 	LXI D,__L00102  ; load ref left
 	CALL PRINT  ; proc call
 	JMP __L00112  ; skip else
-__L00111:     ; 081e
+__L00111:     ; 081a
 	LHLD _DRIVESTATUS_RPD ; load var left
 	XCHG    ; to D,E
 	CALL PV  ; proc call
-__L00112:     ; 0825
+__L00112:     ; 0821
 	LXI D,__L00113  ; load ref left
 	CALL PRINTX  ; proc call
 	MVI E,000H  ; load const left
@@ -1145,9 +1141,8 @@ __L00112:     ; 0825
 	INX H
 	MOV D,M
 	MVI C,002H  ; load const right
-__L00116:     ; 085e
-	STC
-	CMC
+__L00116:     ; 085a
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1170,13 +1165,13 @@ __L00116:     ; 085e
 	MVI D,000H  ; zero pad MSB
 	MVI B,008H  ; * count
 	LXI H,00000H  ; * init
-__L00118:     ; 0888
+__L00118:     ; 0883
 	MOV A,C
 	RAR
 	MOV C,A
 	JNC __L00119  ; * check bits of right arg
 	DAD D
-__L00119:     ; 088f
+__L00119:     ; 088a
 	XCHG
 	DAD H
 	XCHG
@@ -1210,14 +1205,14 @@ __L00119:     ; 088f
 	LXI D,__L00123  ; load ref left
 	CALL PRINTX  ; proc call
 	JMP CRLF  ; OPT CALLRET
-DISKSTATUS:     ; 08d6
+DISKSTATUS:     ; 08d1
 	CALL GETLOGIN  ; proc call
 	XCHG    ; from D,E
 	SHLD _DISKSTATUS_LOGIN ; assign
 	MVI E,000H  ; load const left
 	LXI H,_DISKSTATUS_D   ; assign
 	MOV M,E    ; from E
-__L00124:     ; 08e3
+__L00124:     ; 08de
 	LHLD _DISKSTATUS_LOGIN ; load var left
 	XCHG    ; to D,E
 	LXI B,00000H  ; OPT MVICB
@@ -1225,16 +1220,16 @@ __L00124:     ; 08e3
 	CMP E  ; <>
 	JZ __L00128  ; =
 	JMP __L00129 ; !=
-__L00128:     ; 08f2
+__L00128:     ; 08ed
 	MOV A,B
 	CMP D  ; <>
 	JZ __L00126 ; =
-__L00129:     ; 08f7
+__L00129:     ; 08f2
 	MVI E,001H  ; rel true left
 	JMP __L00127
-__L00126:     ; 08fc
+__L00126:     ; 08f7
 	MVI E,000H  ; rel false left
-__L00127:     ; 08fe
+__L00127:     ; 08f9
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00125  ; skip while
@@ -1250,13 +1245,12 @@ __L00127:     ; 08fe
 	MOV E,M   ; to E
 	CALL SELECTDISK  ; proc call
 	CALL DRIVESTATUS  ; proc call
-__L00130:     ; 091a
+__L00130:     ; 0915
 	LHLD _DISKSTATUS_LOGIN ; load var left
 	XCHG    ; to D,E
 	MVI C,001H  ; load const right
-__L00131:     ; 0920
-	STC
-	CMC
+__L00131:     ; 091b
+	ORA A  ; clear carry
 	MOV A,D
 	RAR
 	MOV D,A
@@ -1275,9 +1269,9 @@ __L00131:     ; 0920
 	LXI H,_DISKSTATUS_D   ; assign
 	MOV M,E    ; from E
 	JMP __L00124  ; END
-__L00125:     ; 093f
+__L00125:     ; 0939
 	RET  ; proc return
-MATCH:     ; 0940
+MATCH:     ; 093a
 	XCHG
 	SHLD _MATCH_VA  ; store proc arg 1
 	LXI H,_MATCH_VL  ; store proc arg 2
@@ -1290,7 +1284,7 @@ MATCH:     ; 0940
 	MVI E,001H  ; load const left
 	MOV A,E
 	JMP __L00134  ; DO first iter
-__L00132:     ; 0958
+__L00132:     ; 0952
 	LXI H,_MATCH_VL  ; load var left
 	MOV E,M   ; to E
 	LDA _MATCH_SYNC  ; DO load
@@ -1298,7 +1292,7 @@ __L00132:     ; 0958
 	CMP E   ; DO <=
 	JZ __L00134   ; = 
 	JNC __L00133  ; > DO complete
-__L00134:     ; 0967
+__L00134:     ; 0961
 	STA _MATCH_SYNC  ; DO assign
 	MVI E,001H  ; load const left
 	LXI H,_MATCH_MATCH   ; assign
@@ -1306,14 +1300,14 @@ __L00134:     ; 0967
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00137  ; DO first iter
-__L00135:     ; 0976
+__L00135:     ; 0970
 	MVI E,003H  ; load const left
 	LDA _MATCH_I  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00137   ; = 
 	JNC __L00136  ; > DO complete
-__L00137:     ; 0983
+__L00137:     ; 097d
 	STA _MATCH_I  ; DO assign
 	LXI H,_MATCH_J  ; load var left
 	MOV E,M   ; to E
@@ -1334,16 +1328,16 @@ __L00137:     ; 0983
 	JZ __L00138 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00139
-__L00138:     ; 09a8
+__L00138:     ; 09a2
 	MVI E,000H  ; rel false left
-__L00139:     ; 09aa
+__L00139:     ; 09a4
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00140  ; skip if
 	MVI E,000H  ; load const left
 	LXI H,_MATCH_MATCH   ; assign
 	MOV M,E    ; from E
-__L00140:     ; 09b5
+__L00140:     ; 09af
 	LXI H,_MATCH_J  ; load var left
 	MOV E,M   ; to E
 	MVI A,001H  ; OPT MVICA
@@ -1352,7 +1346,7 @@ __L00140:     ; 09b5
 	LXI H,_MATCH_J   ; assign
 	MOV M,E    ; from E
 	JMP __L00135  ; END
-__L00136:     ; 09c4
+__L00136:     ; 09be
 	LXI H,_MATCH_MATCH  ; load var left
 	MOV E,M   ; to E
 	MOV A,E
@@ -1364,17 +1358,17 @@ __L00136:     ; 09c4
 	LXI H,_MATCH_SYNC  ; load var left
 	MOV E,M   ; to E
 	RET  ; proc return
-__L00141:     ; 09d6
+__L00141:     ; 09d0
 	JMP __L00132  ; END
-__L00133:     ; 09d9
+__L00133:     ; 09d3
 	MVI E,000H  ; load const left
 	RET  ; proc return
-_STATUS_DEVL	DB  043H,04FH,04EH,03AH,052H,044H,052H,03AH,050H,055H,04EH,03AH,04CH,053H,054H,03AH,044H,045H,056H,03AH,056H,041H,04CH,03AH,055H,053H,052H,03AH,044H,053H,04BH,03AH    ; 09dc
-_DEVREQ_DEVR	DB  054H,054H,059H,03AH,043H,052H,054H,03AH,042H,041H,054H,03AH,055H,043H,031H,03AH,054H,054H,059H,03AH,050H,054H,052H,03AH,055H,052H,031H,03AH,055H,052H,032H,03AH,054H,054H,059H,03AH,050H,054H,050H,03AH,055H,050H,031H,03AH,055H,050H,032H,03AH,054H,054H,059H,03AH,043H,052H,054H,03AH,04CH,050H,054H,03AH,055H,04CH,031H,03AH    ; 09fc
-PRNAME:     ; 0a3c
+_STATUS_DEVL	DB  043H,04FH,04EH,03AH,052H,044H,052H,03AH,050H,055H,04EH,03AH,04CH,053H,054H,03AH,044H,045H,056H,03AH,056H,041H,04CH,03AH,055H,053H,052H,03AH,044H,053H,04BH,03AH    ; 09d6
+_DEVREQ_DEVR	DB  054H,054H,059H,03AH,043H,052H,054H,03AH,042H,041H,054H,03AH,055H,043H,031H,03AH,054H,054H,059H,03AH,050H,054H,052H,03AH,055H,052H,031H,03AH,055H,052H,032H,03AH,054H,054H,059H,03AH,050H,054H,050H,03AH,055H,050H,031H,03AH,055H,050H,032H,03AH,054H,054H,059H,03AH,043H,052H,054H,03AH,04CH,050H,054H,03AH,055H,04CH,031H,03AH    ; 09f6
+PRNAME:     ; 0a36
 	XCHG
 	SHLD _PRNAME_A  ; store proc arg 1
-__L00142:     ; 0a40
+__L00142:     ; 0a3a
 	LHLD _PRNAME_A  ; load based left
 	MOV E,M   ; to E
 	MVI A,03AH  ; OPT MVICA
@@ -1382,9 +1376,9 @@ __L00142:     ; 0a40
 	JZ __L00144 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00145
-__L00144:     ; 0a4f
+__L00144:     ; 0a49
 	MVI E,000H  ; rel false left
-__L00145:     ; 0a51
+__L00145:     ; 0a4b
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00143  ; skip while
@@ -1398,14 +1392,14 @@ __L00145:     ; 0a51
 	DAD B  ; + left
 	SHLD _PRNAME_A ; assign
 	JMP __L00142  ; END
-__L00143:     ; 0a6c
+__L00143:     ; 0a66
 	MVI E,03AH  ; load const left
 	JMP PRINTCHAR  ; OPT CALLRET
-DEVREQ:     ; 0a71
+DEVREQ:     ; 0a6b
 	MVI E,000H  ; load const left
 	LXI H,_DEVREQ_ITEMS   ; assign
 	MOV M,E    ; from E
-__L00146:     ; 0a77
+__L00146:     ; 0a71
 	MVI E,001H  ; load const left
 	MOV A,E
 	ANI 001H  ; bool
@@ -1424,9 +1418,9 @@ __L00146:     ; 0a77
 	JNZ __L00150 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00151
-__L00150:     ; 0a9c
+__L00150:     ; 0a96
 	MVI E,000H  ; rel false left
-__L00151:     ; 0a9e
+__L00151:     ; 0a98
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00152  ; skip if
@@ -1437,11 +1431,11 @@ __L00151:     ; 0a9e
 	JZ __L00148 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00149
-__L00148:     ; 0ab2
+__L00148:     ; 0aac
 	MVI E,000H  ; rel false left
-__L00149:     ; 0ab4
+__L00149:     ; 0aae
 	RET  ; proc return
-__L00152:     ; 0ab5
+__L00152:     ; 0aaf
 	LXI H,_DEVREQ_ITEMS  ; load var left
 	MOV E,M   ; to E
 	MVI A,001H  ; OPT MVICA
@@ -1456,9 +1450,9 @@ __L00152:     ; 0ab5
 	JNZ __L00153 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00154
-__L00153:     ; 0ad0
+__L00153:     ; 0aca
 	MVI E,000H  ; rel false left
-__L00154:     ; 0ad2
+__L00154:     ; 0acc
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00155  ; skip if
@@ -1472,21 +1466,20 @@ __L00154:     ; 0ad2
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00158  ; DO first iter
-__L00156:     ; 0aeb
+__L00156:     ; 0ae5
 	MVI E,003H  ; load const left
 	LDA _DEVREQ_I  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00158   ; = 
 	JNC __L00157  ; > DO complete
-__L00158:     ; 0af8
+__L00158:     ; 0af2
 	STA _DEVREQ_I  ; DO assign
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI C,002H  ; load const right
-__L00159:     ; 0b01
-	STC
-	CMC
+__L00159:     ; 0afb
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1505,9 +1498,8 @@ __L00159:     ; 0b01
 	ANA E    ; & left
 	MOV E,A  ; result to E
 	MVI C,002H  ; load const right
-__L00161:     ; 0b24
-	STC
-	CMC
+__L00161:     ; 0b1d
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1532,9 +1524,8 @@ __L00161:     ; 0b24
 	LXI H,_DEVREQ_IOBYTE  ; load var left
 	MOV E,M   ; to E
 	MVI C,002H  ; load const right
-__L00162:     ; 0b4f
-	STC
-	CMC
+__L00162:     ; 0b47
+	ORA A  ; clear carry
 	MOV A,E
 	RAR  ; SHR
 	MOV E,A
@@ -1544,9 +1535,9 @@ __L00162:     ; 0b4f
 	MOV M,E    ; from E
 	CALL CRLF  ; proc call
 	JMP __L00156  ; END
-__L00157:     ; 0b62
+__L00157:     ; 0b59
 	JMP __L00166  ; skip else
-__L00155:     ; 0b65
+__L00155:     ; 0b5c
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI A,006H  ; OPT MVICA
@@ -1554,9 +1545,9 @@ __L00155:     ; 0b65
 	JNZ __L00163 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00164
-__L00163:     ; 0b74
+__L00163:     ; 0b6b
 	MVI E,000H  ; rel false left
-__L00164:     ; 0b76
+__L00164:     ; 0b6d
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00165  ; skip if
@@ -1573,22 +1564,21 @@ __L00164:     ; 0b76
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00174  ; DO first iter
-__L00172:     ; 0b9f
+__L00172:     ; 0b96
 	MVI E,003H  ; load const left
 	LDA _DEVREQ_I  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00174   ; = 
 	JNC __L00173  ; > DO complete
-__L00174:     ; 0bac
+__L00174:     ; 0ba3
 	STA _DEVREQ_I  ; DO assign
 	CALL CRLF  ; proc call
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI C,002H  ; load const right
-__L00175:     ; 0bb8
-	STC
-	CMC
+__L00175:     ; 0baf
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1604,23 +1594,22 @@ __L00175:     ; 0bb8
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00179  ; DO first iter
-__L00177:     ; 0bd7
+__L00177:     ; 0bcd
 	MVI E,00CH  ; load const left
 	LDA _DEVREQ_J  ; DO load
 	ADI 004H  ; DO update
 	CMP E   ; DO <=
 	JZ __L00179   ; = 
 	JNC __L00178  ; > DO complete
-__L00179:     ; 0be5
+__L00179:     ; 0bdb
 	STA _DEVREQ_J  ; DO assign
 	MVI E,020H  ; load const left
 	CALL PRINTCHAR  ; proc call
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI C,004H  ; load const right
-__L00180:     ; 0bf3
-	STC
-	CMC
+__L00180:     ; 0be9
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1636,12 +1625,12 @@ __L00180:     ; 0bf3
 	XCHG     ; to D,E
 	CALL PRNAME  ; proc call
 	JMP __L00177  ; END
-__L00178:     ; 0c0f
+__L00178:     ; 0c04
 	JMP __L00172  ; END
-__L00173:     ; 0c12
-__L00166:     ; 0c12
+__L00173:     ; 0c07
+__L00166:     ; 0c07
 	JMP __L00184  ; skip else
-__L00165:     ; 0c15
+__L00165:     ; 0c0a
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI A,007H  ; OPT MVICA
@@ -1649,18 +1638,18 @@ __L00165:     ; 0c15
 	JNZ __L00181 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00182
-__L00181:     ; 0c24
+__L00181:     ; 0c19
 	MVI E,000H  ; rel false left
-__L00182:     ; 0c26
+__L00182:     ; 0c1b
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00183  ; skip if
 	CALL USERSTATUS  ; proc call
 	MVI E,001H  ; load const left
 	RET  ; proc return
-__L00184:     ; 0c31
+__L00184:     ; 0c26
 	JMP __L00188  ; skip else
-__L00183:     ; 0c34
+__L00183:     ; 0c29
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI A,008H  ; OPT MVICA
@@ -1668,16 +1657,16 @@ __L00183:     ; 0c34
 	JNZ __L00185 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00186
-__L00185:     ; 0c43
+__L00185:     ; 0c38
 	MVI E,000H  ; rel false left
-__L00186:     ; 0c45
+__L00186:     ; 0c3a
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00187  ; skip if
 	CALL DISKSTATUS  ; proc call
-__L00188:     ; 0c4d
+__L00188:     ; 0c42
 	JMP __L00189  ; skip else
-__L00187:     ; 0c50
+__L00187:     ; 0c45
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI C,001H  ; load const right
@@ -1687,9 +1676,8 @@ __L00187:     ; 0c50
 	LXI H,_DEVREQ_I   ; assign
 	MOV M,E    ; from E
 	MVI C,004H  ; load const right
-__L00190:     ; 0c5f
-	STC
-	CMC
+__L00190:     ; 0c54
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1707,9 +1695,9 @@ __L00190:     ; 0c5f
 	JZ __L00191 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00192
-__L00191:     ; 0c82
+__L00191:     ; 0c76
 	MVI E,000H  ; rel false left
-__L00192:     ; 0c84
+__L00192:     ; 0c78
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00193  ; skip if
@@ -1717,7 +1705,7 @@ __L00192:     ; 0c84
 	CALL PRINT  ; proc call
 	MVI E,001H  ; load const left
 	RET  ; proc return
-__L00193:     ; 0c92
+__L00193:     ; 0c86
 	CALL SCAN  ; proc call
 	LXI H,_DEVREQ_J  ; load var left
 	MOV E,M   ; to E
@@ -1738,9 +1726,9 @@ __L00193:     ; 0c92
 	JNZ __L00195 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00196
-__L00195:     ; 0cb9
+__L00195:     ; 0cad
 	MVI E,000H  ; rel false left
-__L00196:     ; 0cbb
+__L00196:     ; 0caf
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00197  ; skip if
@@ -1748,11 +1736,11 @@ __L00196:     ; 0cbb
 	CALL PRINT  ; proc call
 	MVI E,001H  ; load const left
 	RET  ; proc return
-__L00197:     ; 0cc9
+__L00197:     ; 0cbd
 	MVI E,0FCH  ; load const left
 	LXI H,_DEVREQ_IOBYTE   ; assign
 	MOV M,E    ; from E
-__L00199:     ; 0ccf
+__L00199:     ; 0cc3
 	LXI H,_DEVREQ_I  ; load var left
 	MOV E,M   ; to E
 	MVI C,001H  ; load const right
@@ -1766,16 +1754,16 @@ __L00199:     ; 0ccf
 	JZ __L00201 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00202
-__L00201:     ; 0ce7
+__L00201:     ; 0cdb
 	MVI E,000H  ; rel false left
-__L00202:     ; 0ce9
+__L00202:     ; 0cdd
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00200  ; skip while
 	LXI H,_DEVREQ_IOBYTE  ; load var left
 	MOV E,M   ; to E
 	MVI C,002H  ; load const right
-__L00203:     ; 0cf4
+__L00203:     ; 0ce8
 	MOV A,E
 	RLC  ; ROL
 	MOV E,A
@@ -1786,9 +1774,8 @@ __L00203:     ; 0cf4
 	LXI H,_DEVREQ_J  ; load var left
 	MOV E,M   ; to E
 	MVI C,002H  ; load const right
-__L00204:     ; 0d05
-	STC
-	CMC
+__L00204:     ; 0cf9
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -1797,7 +1784,7 @@ __L00204:     ; 0d05
 	LXI H,_DEVREQ_J   ; assign
 	MOV M,E    ; from E
 	JMP __L00199  ; END
-__L00200:     ; 0d15
+__L00200:     ; 0d08
 	LXI H,00003H  ; load var left
 	MOV E,M   ; to E
 	LXI H,_DEVREQ_IOBYTE  ; load var right
@@ -1810,7 +1797,7 @@ __L00200:     ; 0d15
 	MOV E,A  ; result to E
 	LXI H,00003H   ; assign
 	MOV M,E    ; from E
-__L00189:     ; 0d29
+__L00189:     ; 0d1c
 	CALL SCAN  ; proc call
 	LXI D,00000H  ; OPT MVIED
 	LXI H,_STATUS_ACCUM  ; load arr left
@@ -1821,15 +1808,15 @@ __L00189:     ; 0d29
 	JNZ __L00205 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00206
-__L00205:     ; 0d3f
+__L00205:     ; 0d32
 	MVI E,000H  ; rel false left
-__L00206:     ; 0d41
+__L00206:     ; 0d34
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00207  ; skip if
 	MVI E,001H  ; load const left
 	RET  ; proc return
-__L00207:     ; 0d49
+__L00207:     ; 0d3c
 	LXI D,00000H  ; OPT MVIED
 	LXI H,_STATUS_ACCUM  ; load arr left
 	DAD D    ; arr offset
@@ -1839,9 +1826,9 @@ __L00207:     ; 0d49
 	JZ __L00208 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00209
-__L00208:     ; 0d5c
+__L00208:     ; 0d4f
 	MVI E,000H  ; rel false left
-__L00209:     ; 0d5e
+__L00209:     ; 0d51
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00210  ; skip if
@@ -1849,11 +1836,11 @@ __L00209:     ; 0d5e
 	CALL PRINT  ; proc call
 	MVI E,001H  ; load const left
 	RET  ; proc return
-__L00210:     ; 0d6c
+__L00210:     ; 0d5f
 	JMP __L00146  ; END
-__L00147:     ; 0d6f
+__L00147:     ; 0d62
 	RET  ; proc return
-PVALUE:     ; 0d70
+PVALUE:     ; 0d63
 	XCHG
 	SHLD _PVALUE_V  ; store proc arg 1
 	LXI D,02710H  ; load const left
@@ -1862,7 +1849,7 @@ PVALUE:     ; 0d70
 	MVI E,000H  ; load const left
 	LXI H,_PVALUE_ZERO   ; assign
 	MOV M,E    ; from E
-__L00212:     ; 0d81
+__L00212:     ; 0d74
 	LHLD _PVALUE_K ; load var left
 	XCHG    ; to D,E
 	LXI B,00000H  ; OPT MVICB
@@ -1870,16 +1857,16 @@ __L00212:     ; 0d81
 	CMP E  ; <>
 	JZ __L00216  ; =
 	JMP __L00217 ; !=
-__L00216:     ; 0d90
+__L00216:     ; 0d83
 	MOV A,B
 	CMP D  ; <>
 	JZ __L00214 ; =
-__L00217:     ; 0d95
+__L00217:     ; 0d88
 	MVI E,001H  ; rel true left
 	JMP __L00215
-__L00214:     ; 0d9a
+__L00214:     ; 0d8d
 	MVI E,000H  ; rel false left
-__L00215:     ; 0d9c
+__L00215:     ; 0d8f
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00213  ; skip while
@@ -1889,7 +1876,7 @@ __L00215:     ; 0d9c
 	MOV C,L
 	MOV B,H ; to B,C
 	LXI H,00000H  ; / init
-__L00218:     ; 0dad
+__L00218:     ; 0da0
 	MOV A,E
 	SUB C
 	MOV E,A
@@ -1899,7 +1886,7 @@ __L00218:     ; 0dad
 	MOV D,A
 	INX H
 	JMP __L00218  ; more /
-__L00219:     ; 0dba
+__L00219:     ; 0dad
 	XCHG  ; / result to D,E
 	LXI H,_PVALUE_D   ; assign
 	MOV M,E    ; from E
@@ -1908,7 +1895,7 @@ __L00219:     ; 0dba
 	LHLD _PVALUE_K ; load var right
 	MOV C,L
 	MOV B,H ; to B,C
-__L00220:     ; 0dc8
+__L00220:     ; 0dbb
 	MOV A,E
 	SUB C
 	MOV E,A
@@ -1923,7 +1910,7 @@ __L00220:     ; 0dc8
 	XCHG    ; to D,E
 	LXI B,0000AH  ; OPT MVICB
 	LXI H,00000H  ; / init
-__L00221:     ; 0de0
+__L00221:     ; 0dd3
 	MOV A,E
 	SUB C
 	MOV E,A
@@ -1933,7 +1920,7 @@ __L00221:     ; 0de0
 	MOV D,A
 	INX H
 	JMP __L00221  ; more /
-__L00222:     ; 0ded
+__L00222:     ; 0de0
 	SHLD _PVALUE_K ; assign
 	LXI H,_PVALUE_ZERO  ; load var left
 	MOV E,M   ; to E
@@ -1949,9 +1936,9 @@ __L00222:     ; 0ded
 	JNZ __L00223 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00224
-__L00223:     ; 0e0b
+__L00223:     ; 0dfe
 	MVI C,000H  ; rel false right
-__L00224:     ; 0e0d
+__L00224:     ; 0e00
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -1964,9 +1951,9 @@ __L00224:     ; 0e0d
 	JZ __L00225 ; =
 	MVI C,001H  ; rel true right
 	JMP __L00226
-__L00225:     ; 0e21
+__L00225:     ; 0e14
 	MVI C,000H  ; rel false right
-__L00226:     ; 0e23
+__L00226:     ; 0e16
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -1983,13 +1970,13 @@ __L00226:     ; 0e23
 	ADD E    ; + left
 	MOV E,A  ; result to E
 	CALL PRINTCHAR  ; proc call
-__L00227:     ; 0e3d
+__L00227:     ; 0e30
 	JMP __L00212  ; END
-__L00213:     ; 0e40
+__L00213:     ; 0e33
 	MVI E,06BH  ; load const left
 	CALL PRINTCHAR  ; proc call
 	JMP CRLF  ; OPT CALLRET
-COMPALLOC:     ; 0e48
+COMPALLOC:     ; 0e3b
 	CALL GETALLOCA  ; proc call
 	XCHG    ; from D,E
 	SHLD _STATUS_ALLOCA ; assign
@@ -2000,17 +1987,17 @@ COMPALLOC:     ; 0e48
 	CALL PRINTCHAR  ; proc call
 	LXI D,__L00228  ; load ref left
 	JMP PRINTX  ; OPT CALLRET
-PRCOUNT:     ; 0e5f
+PRCOUNT:     ; 0e52
 	MVI E,001H  ; load const left
 	CALL COUNT  ; proc call
 	CALL PVALUE  ; proc call
 	RET  ; proc return
-PRALLOC:     ; 0e68
+PRALLOC:     ; 0e5b
 	LXI D,__L00229  ; load ref left
 	CALL PRINT  ; proc call
 	CALL COMPALLOC  ; proc call
 	JMP PRCOUNT  ; OPT CALLRET
-PRSTATUS:     ; 0e74
+PRSTATUS:     ; 0e67
 	CALL GETLOGIN  ; proc call
 	XCHG    ; from D,E
 	SHLD _PRSTATUS_LOGIN ; assign
@@ -2020,7 +2007,7 @@ PRSTATUS:     ; 0e74
 	MVI E,000H  ; load const left
 	LXI H,_PRSTATUS_D   ; assign
 	MOV M,E    ; from E
-__L00230:     ; 0e88
+__L00230:     ; 0e7b
 	LHLD _PRSTATUS_LOGIN ; load var left
 	XCHG    ; to D,E
 	LXI B,00000H  ; OPT MVICB
@@ -2028,16 +2015,16 @@ __L00230:     ; 0e88
 	CMP E  ; <>
 	JZ __L00234  ; =
 	JMP __L00235 ; !=
-__L00234:     ; 0e97
+__L00234:     ; 0e8a
 	MOV A,B
 	CMP D  ; <>
 	JZ __L00232 ; =
-__L00235:     ; 0e9c
+__L00235:     ; 0e8f
 	MVI E,001H  ; rel true left
 	JMP __L00233
-__L00232:     ; 0ea1
+__L00232:     ; 0e94
 	MVI E,000H  ; rel false left
-__L00233:     ; 0ea3
+__L00233:     ; 0e96
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00231  ; skip while
@@ -2066,20 +2053,19 @@ __L00233:     ; 0ea3
 	MVI E,04FH  ; load const left
 	CALL PRINTCHAR  ; proc call
 	JMP __L00239  ; skip else
-__L00238:     ; 0eda
+__L00238:     ; 0ecd
 	MVI E,057H  ; load const left
 	CALL PRINTCHAR  ; proc call
-__L00239:     ; 0edf
+__L00239:     ; 0ed2
 	LXI D,__L00240  ; load ref left
 	CALL PRINTX  ; proc call
 	CALL PRCOUNT  ; proc call
-__L00236:     ; 0ee8
+__L00236:     ; 0edb
 	LHLD _PRSTATUS_LOGIN ; load var left
 	XCHG    ; to D,E
 	MVI C,001H  ; load const right
-__L00241:     ; 0eee
-	STC
-	CMC
+__L00241:     ; 0ee1
+	ORA A  ; clear carry
 	MOV A,D
 	RAR
 	MOV D,A
@@ -2093,9 +2079,8 @@ __L00241:     ; 0eee
 	LHLD _PRSTATUS_RODISK ; load var left
 	XCHG    ; to D,E
 	MVI C,001H  ; load const right
-__L00242:     ; 0f04
-	STC
-	CMC
+__L00242:     ; 0ef6
+	ORA A  ; clear carry
 	MOV A,D
 	RAR
 	MOV D,A
@@ -2114,9 +2099,9 @@ __L00242:     ; 0f04
 	LXI H,_PRSTATUS_D   ; assign
 	MOV M,E    ; from E
 	JMP __L00230  ; END
-__L00231:     ; 0f23
+__L00231:     ; 0f14
 	JMP CRLF  ; OPT CALLRET
-SETDISK:     ; 0f26
+SETDISK:     ; 0f17
 	LXI D,00000H  ; OPT MVIED
 	LXI H,0005CH  ; load arr left
 	DAD D    ; arr offset
@@ -2126,9 +2111,9 @@ SETDISK:     ; 0f26
 	JZ __L00243 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00244
-__L00243:     ; 0f39
+__L00243:     ; 0f2a
 	MVI E,000H  ; rel false left
-__L00244:     ; 0f3b
+__L00244:     ; 0f2c
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00245  ; skip if
@@ -2141,15 +2126,14 @@ __L00244:     ; 0f3b
 	SUB C    ; - left
 	MOV E,A  ; result to E
 	CALL SELECTDISK  ; proc call
-__L00245:     ; 0f50
+__L00245:     ; 0f41
 	RET  ; proc return
-MULTI16:     ; 0f51
+MULTI16:     ; 0f42
 	LHLD _GETFILE_I ; load var left
 	XCHG    ; to D,E
 	MVI C,004H  ; load const right
-__L00246:     ; 0f57
-	STC
-	CMC
+__L00246:     ; 0f48
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -2163,9 +2147,9 @@ __L00246:     ; 0f57
 	DAD B  ; + left
 	SHLD _GETFILE_FCBSA ; assign
 	RET  ; proc return
-_GETFILE_FSTATLIST	DB  052H,02FH,04FH,000H,052H,02FH,057H,000H,053H,059H,053H,000H,044H,049H,052H,000H    ; 0f6c
-_SETFILESTATUS_FSTAT	DB  052H,02FH,04FH,020H,052H,02FH,057H,020H,053H,059H,053H,020H,044H,049H,052H,020H    ; 0f7c
-SETFILESTATUS:     ; 0f8c
+_GETFILE_FSTATLIST	DB  052H,02FH,04FH,000H,052H,02FH,057H,000H,053H,059H,053H,000H,044H,049H,052H,000H    ; 0f5c
+_SETFILESTATUS_FSTAT	DB  052H,02FH,04FH,020H,052H,02FH,057H,020H,053H,059H,053H,020H,044H,049H,052H,020H    ; 0f6c
+SETFILESTATUS:     ; 0f7c
 	LXI H,0006DH  ; load var left
 	MOV E,M   ; to E
 	MVI A,020H  ; OPT MVICA
@@ -2173,15 +2157,15 @@ SETFILESTATUS:     ; 0f8c
 	JNZ __L00247 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00248
-__L00247:     ; 0f9b
+__L00247:     ; 0f8b
 	MVI E,000H  ; rel false left
-__L00248:     ; 0f9d
+__L00248:     ; 0f8d
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00249  ; skip if
 	MVI E,000H  ; load const left
 	RET  ; proc return
-__L00249:     ; 0fa5
+__L00249:     ; 0f95
 	LXI D,_STATUS_ACCUM  ; load ref left
 	PUSH D  ; proc ext arg
 	MVI E,004H  ; load const left
@@ -2197,9 +2181,9 @@ __L00249:     ; 0fa5
 	JNZ __L00250 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00251
-__L00250:     ; 0fc5
+__L00250:     ; 0fb5
 	MVI E,000H  ; rel false left
-__L00251:     ; 0fc7
+__L00251:     ; 0fb7
 	PUSH D ; save left binary
 	LXI D,00001H  ; OPT MVIED
 	LXI H,_STATUS_ACCUM  ; load arr left
@@ -2210,9 +2194,9 @@ __L00251:     ; 0fc7
 	JNZ __L00252 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00253
-__L00252:     ; 0fdb
+__L00252:     ; 0fcb
 	MVI C,000H  ; rel false right
-__L00253:     ; 0fdd
+__L00253:     ; 0fcd
 	POP D  ; restore left binary
 	MOV A,C
 	ANA E    ; & left
@@ -2228,7 +2212,7 @@ __L00253:     ; 0fdd
 	ANI 001H
 	MOV E,A  ; result to E
 	RET  ; proc return
-__L00254:     ; 0ff2
+__L00254:     ; 0fe2
 	LXI D,_SETFILESTATUS_FSTAT  ; load ref left
 	MVI C,004H  ; load const right
 	CALL MATCH  ; proc call
@@ -2239,29 +2223,29 @@ __L00254:     ; 0ff2
 	JNZ __L00256 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00257
-__L00256:     ; 1009
+__L00256:     ; 0ff9
 	MVI E,000H  ; rel false left
-__L00257:     ; 100b
+__L00257:     ; 0ffb
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00258  ; skip if
 	LXI D,__L00255  ; load ref left
 	CALL PRINT  ; proc call
-__L00258:     ; 1016
+__L00258:     ; 1006
 	MVI E,001H  ; load const left
 	RET  ; proc return
-PRINTFN:     ; 1019
+PRINTFN:     ; 1009
 	MVI E,001H  ; load const left
 	MOV A,E
 	JMP __L00261  ; DO first iter
-__L00259:     ; 101f
+__L00259:     ; 100f
 	MVI E,00BH  ; load const left
 	LDA _PRINTFN_K  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00261   ; = 
 	JNC __L00260  ; > DO complete
-__L00261:     ; 102c
+__L00261:     ; 101c
 	STA _PRINTFN_K  ; DO assign
 	LXI H,_PRINTFN_K  ; load var left
 	MOV E,M   ; to E
@@ -2279,9 +2263,9 @@ __L00261:     ; 102c
 	JZ __L00262 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00263
-__L00262:     ; 104d
+__L00262:     ; 103d
 	MVI E,000H  ; rel false left
-__L00263:     ; 104f
+__L00263:     ; 103f
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00264  ; skip if
@@ -2292,23 +2276,23 @@ __L00263:     ; 104f
 	JNZ __L00265 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00266
-__L00265:     ; 1063
+__L00265:     ; 1053
 	MVI E,000H  ; rel false left
-__L00266:     ; 1065
+__L00266:     ; 1055
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00267  ; skip if
 	MVI E,02EH  ; load const left
 	CALL PRINTCHAR  ; proc call
-__L00267:     ; 106f
+__L00267:     ; 105f
 	LXI H,_PRINTFN_LB  ; load var left
 	MOV E,M   ; to E
 	CALL PRINTCHAR  ; proc call
-__L00264:     ; 1076
+__L00264:     ; 1066
 	JMP __L00259  ; END
-__L00260:     ; 1079
+__L00260:     ; 1069
 	RET  ; proc return
-GETFILE:     ; 107a
+GETFILE:     ; 106a
 	CALL SETBPB  ; proc call
 	CALL SETDISK  ; proc call
 	MVI E,000H  ; load const left
@@ -2331,14 +2315,14 @@ GETFILE:     ; 107a
 	JNZ __L00269 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00270
-__L00269:     ; 10a7
+__L00269:     ; 1097
 	MVI E,000H  ; rel false left
-__L00270:     ; 10a9
+__L00270:     ; 1099
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00271  ; skip if
 	RET  ; proc return
-__L00271:     ; 10af
+__L00271:     ; 109f
 	LXI H,_GETFILE_SCASE  ; load var left
 	MOV E,M   ; to E
 	MVI C,001H  ; load const right
@@ -2348,7 +2332,7 @@ __L00271:     ; 10af
 	LXI H,_GETFILE_SCASE   ; assign
 	MOV M,E    ; from E
 	JMP __L00275  ; skip else
-__L00268:     ; 10bf
+__L00268:     ; 10af
 	LXI D,00001H  ; OPT MVIED
 	LXI H,0005CH  ; load arr left
 	DAD D    ; arr offset
@@ -2358,16 +2342,16 @@ __L00268:     ; 10bf
 	JNZ __L00272 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00273
-__L00272:     ; 10d2
+__L00272:     ; 10c2
 	MVI E,000H  ; rel false left
-__L00273:     ; 10d4
+__L00273:     ; 10c4
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00274  ; skip if
 	CALL PRALLOC  ; proc call
 	RET  ; proc return
-__L00275:     ; 10dd
-__L00274:     ; 10dd
+__L00275:     ; 10cd
+__L00274:     ; 10cd
 	LXI D,00000H  ; OPT MVIED
 	XCHG    ; from D,E
 	SHLD _GETFILE_FCBN ; assign
@@ -2393,8 +2377,8 @@ __L00274:     ; 10dd
 	MOV M,E  ; arr assign from (D),C
 	LXI D,0005CH  ; OPT MVIED
 	CALL SEARCH  ; proc call
-COLLECT:     ; 110b
-__L00276:     ; 110b
+COLLECT:     ; 10fb
+__L00276:     ; 10fb
 	LXI H,_STATUS_DCNT  ; load var left
 	MOV E,M   ; to E
 	MVI A,0FFH  ; OPT MVICA
@@ -2402,9 +2386,9 @@ __L00276:     ; 110b
 	JZ __L00278 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00279
-__L00278:     ; 111a
+__L00278:     ; 110a
 	MVI E,000H  ; rel false left
-__L00279:     ; 111c
+__L00279:     ; 110c
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00277  ; skip while
@@ -2414,9 +2398,8 @@ __L00279:     ; 111c
 	ANA E    ; & left
 	MOV E,A  ; result to E
 	MVI C,005H  ; load const right
-__L00280:     ; 112b
-	STC
-	CMC
+__L00280:     ; 111b
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -2434,7 +2417,7 @@ __L00280:     ; 112b
 	LXI D,00000H  ; OPT MVIED
 	XCHG    ; from D,E
 	SHLD _GETFILE_I ; assign
-__L00281:     ; 114b
+__L00281:     ; 113a
 	LXI H,_GETFILE_MATCHED  ; load var left
 	MOV E,M   ; to E
 	MOV A,E
@@ -2452,16 +2435,16 @@ __L00281:     ; 114b
 	JZ __L00285   ; =
 	JNC __L00283  ; >
 	JMP __L00286  ; <
-__L00285:     ; 1169
+__L00285:     ; 1158
 	MOV A,E
 	CMP C  ; <
 	JNC __L00283 ; >=
-__L00286:     ; 116e
+__L00286:     ; 115d
 	MVI C,001H  ; rel true right
 	JMP __L00284
-__L00283:     ; 1173
+__L00283:     ; 1162
 	MVI C,000H  ; rel false right
-__L00284:     ; 1175
+__L00284:     ; 1164
 	POP D  ; restore left binary
 	MOV A,C
 	ANA E    ; & left
@@ -2473,14 +2456,14 @@ __L00284:     ; 1175
 	MVI E,001H  ; load const left
 	MOV A,E
 	JMP __L00289  ; DO first iter
-__L00287:     ; 1187
+__L00287:     ; 1176
 	MVI E,00BH  ; load const left
 	LDA _GETFILE_KB  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00289   ; = 
 	JNC __L00288  ; > DO complete
-__L00289:     ; 1194
+__L00289:     ; 1183
 	STA _GETFILE_KB  ; DO assign
 	LXI H,_GETFILE_KB  ; load var left
 	MOV E,M   ; to E
@@ -2501,9 +2484,9 @@ __L00289:     ; 1194
 	JZ __L00290 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00291
-__L00290:     ; 11b9
+__L00290:     ; 11a8
 	MVI E,000H  ; rel false left
-__L00291:     ; 11bb
+__L00291:     ; 11aa
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00292  ; skip if
@@ -2511,7 +2494,7 @@ __L00291:     ; 11bb
 	LXI H,_GETFILE_KB   ; assign
 	MOV M,E    ; from E
 	JMP __L00295  ; skip else
-__L00292:     ; 11c9
+__L00292:     ; 11b8
 	LXI H,_GETFILE_KB  ; load var left
 	MOV E,M   ; to E
 	MVI A,00BH  ; OPT MVICA
@@ -2519,14 +2502,14 @@ __L00292:     ; 11c9
 	JNZ __L00293 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00294
-__L00293:     ; 11d8
+__L00293:     ; 11c7
 	MVI E,000H  ; rel false left
-__L00294:     ; 11da
+__L00294:     ; 11c9
 	LXI H,_GETFILE_MATCHED   ; assign
 	MOV M,E    ; from E
-__L00295:     ; 11de
+__L00295:     ; 11cd
 	JMP __L00287  ; END
-__L00288:     ; 11e1
+__L00288:     ; 11d0
 	LHLD _GETFILE_I ; load var left
 	XCHG    ; to D,E
 	LXI B,00001H  ; OPT MVICB
@@ -2534,8 +2517,8 @@ __L00288:     ; 11e1
 	DAD B  ; + left
 	SHLD _GETFILE_I ; assign
 	JMP __L00281  ; END
-__L00282:     ; 11f0
-CHECKMATCHED:     ; 11f0
+__L00282:     ; 11df
+CHECKMATCHED:     ; 11df
 	LXI H,_GETFILE_MATCHED  ; load var left
 	MOV E,M   ; to E
 	MOV A,E
@@ -2556,7 +2539,7 @@ CHECKMATCHED:     ; 11f0
 	XCHG    ; from D,E
 	SHLD _GETFILE_I ; assign
 	JMP __L00297  ; skip else
-__L00296:     ; 1211
+__L00296:     ; 1200
 	LHLD _GETFILE_FCBN ; load var left
 	SHLD _GETFILE_I ; assign
 	XCHG    ; restore D,E
@@ -2573,17 +2556,17 @@ __L00296:     ; 1211
 	JC __L00298   ; <
 	JZ __L00300   ; =
 	JMP __L00301  ; >
-__L00300:     ; 1235
+__L00300:     ; 1224
 	MOV A,E
 	CMP C  ; >
 	JC __L00298  ; <
 	JZ __L00298  ; =
-__L00301:     ; 123d
+__L00301:     ; 122c
 	MVI E,001H  ; rel true left
 	JMP __L00299
-__L00298:     ; 1242
+__L00298:     ; 1231
 	MVI E,000H  ; rel false left
-__L00299:     ; 1244
+__L00299:     ; 1233
 	PUSH D ; save left binary
 	LHLD _GETFILE_FCBSA ; load var left
 	XCHG    ; to D,E
@@ -2599,16 +2582,16 @@ __L00299:     ; 1244
 	JZ __L00304  ; =
 	JC __L00302  ; <
 	JMP __L00305 ; >
-__L00304:     ; 125f
+__L00304:     ; 124e
 	MOV A,E
 	CMP C  ; >=
 	JC __L00302  ; <
-__L00305:     ; 1264
+__L00305:     ; 1253
 	MVI C,001H  ; rel true right
 	JMP __L00303
-__L00302:     ; 1269
+__L00302:     ; 1258
 	MVI C,000H  ; rel false right
-__L00303:     ; 126b
+__L00303:     ; 125a
 	POP D  ; restore left binary
 	MOV A,C
 	ORA E    ; | left
@@ -2625,7 +2608,7 @@ __L00303:     ; 126b
 	XCHG    ; from D,E
 	SHLD _GETFILE_FCBN ; assign
 	CALL MULTI16  ; proc call
-__L00306:     ; 128b
+__L00306:     ; 127a
 	LHLD _GETFILE_I ; load var left
 	XCHG    ; to D,E
 	PUSH D  ; save left array
@@ -2642,14 +2625,14 @@ __L00306:     ; 128b
 	MVI E,000H  ; load const left
 	MOV A,E
 	JMP __L00310  ; DO first iter
-__L00308:     ; 12a4
+__L00308:     ; 1293
 	MVI E,00BH  ; load const left
 	LDA _GETFILE_KB  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00310   ; = 
 	JNC __L00309  ; > DO complete
-__L00310:     ; 12b1
+__L00310:     ; 12a0
 	STA _GETFILE_KB  ; DO assign
 	LXI H,_GETFILE_KB  ; load var left
 	MOV E,M   ; to E
@@ -2666,7 +2649,7 @@ __L00310:     ; 12b1
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
 	JMP __L00308  ; END
-__L00309:     ; 12cf
+__L00309:     ; 12be
 	LXI D,00000H  ; OPT MVIED
 	PUSH D  ; save left array
 	LHLD _GETFILE_I ; load var left
@@ -2712,7 +2695,7 @@ __L00309:     ; 12cf
 	MOV M,E  ; arr assign from (D),C
 	INX H
 	MOV M,D
-__L00297:     ; 130e
+__L00297:     ; 12fd
 	LHLD _GETFILE_I ; load var left
 	XCHG    ; to D,E
 	LXI H,_GETFILE_FCBE  ; load arr left
@@ -2771,13 +2754,13 @@ __L00297:     ; 130e
 	MVI D,000H  ; zero pad MSB
 	MVI B,008H  ; * count
 	LXI H,00000H  ; * init
-__L00311:     ; 1368
+__L00311:     ; 1357
 	MOV A,C
 	RAR
 	MOV C,A
 	JNC __L00312  ; * check bits of right arg
 	DAD D
-__L00312:     ; 136f
+__L00312:     ; 135e
 	XCHG
 	DAD H
 	XCHG
@@ -2800,7 +2783,7 @@ __L00312:     ; 136f
 	MOV M,E  ; arr assign from (D),C
 	INX H
 	MOV M,D
-COUNTBYTES:     ; 138b
+COUNTBYTES:     ; 137a
 	MVI E,001H  ; load const left
 	LXI H,_GETFILE_LB   ; assign
 	MOV M,E    ; from E
@@ -2816,28 +2799,28 @@ COUNTBYTES:     ; 138b
 	JC __L00313   ; <
 	JZ __L00315   ; =
 	JMP __L00316  ; >
-__L00315:     ; 13a9
+__L00315:     ; 1398
 	MOV A,E
 	CMP C  ; >
 	JC __L00313  ; <
 	JZ __L00313  ; =
-__L00316:     ; 13b1
+__L00316:     ; 13a0
 	MVI E,001H  ; rel true left
 	JMP __L00314
-__L00313:     ; 13b6
+__L00313:     ; 13a5
 	MVI E,000H  ; rel false left
-__L00314:     ; 13b8
+__L00314:     ; 13a7
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00317  ; skip if
 	MVI E,002H  ; load const left
 	LXI H,_GETFILE_LB   ; assign
 	MOV M,E    ; from E
-__L00317:     ; 13c3
+__L00317:     ; 13b2
 	MVI E,010H  ; load const left
 	MOV A,E
 	JMP __L00320  ; DO first iter
-__L00318:     ; 13c9
+__L00318:     ; 13b8
 	MVI E,01FH  ; load const left
 	LXI H,_GETFILE_LB  ; load var right
 	MOV C,M   ; to C
@@ -2846,7 +2829,7 @@ __L00318:     ; 13c9
 	CMP E   ; DO <=
 	JZ __L00320   ; = 
 	JNC __L00319  ; > DO complete
-__L00320:     ; 13da
+__L00320:     ; 13c9
 	STA _GETFILE_KB  ; DO assign
 	LXI H,_GETFILE_KB  ; load var left
 	MOV E,M   ; to E
@@ -2863,9 +2846,9 @@ __L00320:     ; 13da
 	JNZ __L00321 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00322
-__L00321:     ; 13fb
+__L00321:     ; 13ea
 	MVI E,000H  ; rel false left
-__L00322:     ; 13fd
+__L00322:     ; 13ec
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00323  ; skip if
@@ -2887,7 +2870,7 @@ __L00322:     ; 13fd
 	MOV E,A  ; result to E
 	LXI H,_GETFILE_MB   ; assign
 	MOV M,E    ; from E
-__L00323:     ; 141e
+__L00323:     ; 140d
 	LXI H,_GETFILE_MB  ; load var left
 	MOV E,M   ; to E
 	MVI A,000H  ; OPT MVICA
@@ -2895,9 +2878,9 @@ __L00323:     ; 141e
 	JZ __L00324 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00325
-__L00324:     ; 142d
+__L00324:     ; 141c
 	MVI E,000H  ; rel false left
-__L00325:     ; 142f
+__L00325:     ; 141e
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00326  ; skip if
@@ -2919,13 +2902,13 @@ __L00325:     ; 142f
 	MOV B,H
 	POP D  ; restore left ref
 	CALL ADDBLOCK  ; proc call
-__L00326:     ; 1450
+__L00326:     ; 143f
 	JMP __L00318  ; END
-__L00319:     ; 1453
+__L00319:     ; 1442
 	CALL SEARCHN  ; proc call
 	JMP __L00276  ; END
-__L00277:     ; 1459
-DISPLAY:     ; 1459
+__L00277:     ; 1448
+DISPLAY:     ; 1448
 	LHLD _GETFILE_FCBN ; load var left
 	XCHG    ; to D,E
 	LXI B,00000H  ; OPT MVICB
@@ -2937,16 +2920,16 @@ DISPLAY:     ; 1459
 	JNZ __L00327 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00328
-__L00327:     ; 146f
+__L00327:     ; 145e
 	MVI E,000H  ; rel false left
-__L00328:     ; 1471
+__L00328:     ; 1460
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00329  ; skip if
 	LXI D,__L00330  ; load ref left
 	CALL PRINT  ; proc call
 	JMP __L00334  ; skip else
-__L00329:     ; 147f
+__L00329:     ; 146e
 	LXI H,_GETFILE_SCASE  ; load var left
 	MOV E,M   ; to E
 	MVI A,0FFH  ; OPT MVICA
@@ -2954,9 +2937,9 @@ __L00329:     ; 147f
 	JNZ __L00331 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00332
-__L00331:     ; 148e
+__L00331:     ; 147d
 	MVI E,000H  ; rel false left
-__L00332:     ; 1490
+__L00332:     ; 147f
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00333  ; skip if
@@ -2968,24 +2951,24 @@ __L00332:     ; 1490
 	JC __L00335   ; <
 	JZ __L00337   ; =
 	JMP __L00338  ; >
-__L00337:     ; 14a7
+__L00337:     ; 1496
 	MOV A,E
 	CMP C  ; >
 	JC __L00335  ; <
 	JZ __L00335  ; =
-__L00338:     ; 14af
+__L00338:     ; 149e
 	MVI E,001H  ; rel true left
 	JMP __L00336
-__L00335:     ; 14b4
+__L00335:     ; 14a3
 	MVI E,000H  ; rel false left
-__L00336:     ; 14b6
+__L00336:     ; 14a5
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00339  ; skip if
 	LXI D,00001H  ; OPT MVIED
 	XCHG    ; from D,E
 	SHLD _GETFILE_L ; assign
-__L00340:     ; 14c2
+__L00340:     ; 14b1
 	LHLD _GETFILE_L ; load var left
 	XCHG    ; to D,E
 	LXI B,00000H  ; OPT MVICB
@@ -2994,17 +2977,17 @@ __L00340:     ; 14c2
 	JC __L00342   ; <
 	JZ __L00344   ; =
 	JMP __L00345  ; >
-__L00344:     ; 14d4
+__L00344:     ; 14c3
 	MOV A,E
 	CMP C  ; >
 	JC __L00342  ; <
 	JZ __L00342  ; =
-__L00345:     ; 14dc
+__L00345:     ; 14cb
 	MVI E,001H  ; rel true left
 	JMP __L00343
-__L00342:     ; 14e1
+__L00342:     ; 14d0
 	MVI E,000H  ; rel false left
-__L00343:     ; 14e3
+__L00343:     ; 14d2
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00341  ; skip while
@@ -3014,7 +2997,7 @@ __L00343:     ; 14e3
 	LXI D,00000H  ; OPT MVIED
 	XCHG     ; from D,E
 	JMP __L00348  ; DO first iter
-__L00346:     ; 14f6
+__L00346:     ; 14e5
 	LHLD _GETFILE_FCBN ; load var left
 	XCHG    ; to D,E
 	LXI B,00002H  ; OPT MVICB
@@ -3031,12 +3014,12 @@ __L00346:     ; 14f6
 	JZ __L00349   ; =
 	JNC __L00347  ; > DO complete
 	JMP __L00348  ; <
-__L00349:     ; 1512
+__L00349:     ; 1501
 	MOV A,L
 	CMP E   ; DO <=
 	JZ __L00348   ; =
 	JNC __L00347  ; > DO complete
-__L00348:     ; 151a
+__L00348:     ; 1509
 	SHLD _GETFILE_M  ; DO assign
 	LHLD _GETFILE_M ; load var left
 	XCHG    ; to D,E
@@ -3071,14 +3054,14 @@ __L00348:     ; 151a
 	MVI E,001H  ; load const left
 	MOV A,E
 	JMP __L00352  ; DO first iter
-__L00350:     ; 1557
+__L00350:     ; 1546
 	MVI E,00BH  ; load const left
 	LDA _GETFILE_KB  ; DO load
 	INR A   ; DO update
 	CMP E   ; DO <=
 	JZ __L00352   ; = 
 	JNC __L00351  ; > DO complete
-__L00352:     ; 1564
+__L00352:     ; 1553
 	STA _GETFILE_KB  ; DO assign
 	LXI H,_GETFILE_KB  ; load var left
 	MOV E,M   ; to E
@@ -3105,9 +3088,9 @@ __L00352:     ; 1564
 	JZ __L00353
 	MVI E,001H  ; rel true left
 	JMP __L00354
-__L00353:     ; 1595
+__L00353:     ; 1584
 	MVI E,000H  ; rel false left
-__L00354:     ; 1597
+__L00354:     ; 1586
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00355  ; skip if
@@ -3173,7 +3156,7 @@ __L00354:     ; 1597
 	LXI H,_GETFILE_KB   ; assign
 	MOV M,E    ; from E
 	JMP __L00359  ; skip else
-__L00355:     ; 15fd
+__L00355:     ; 15ec
 	LXI H,_GETFILE_B  ; load var left
 	MOV E,M   ; to E
 	LXI H,_GETFILE_F  ; load var right
@@ -3182,24 +3165,24 @@ __L00355:     ; 15fd
 	JNC __L00356
 	MVI E,001H  ; rel true left
 	JMP __L00357
-__L00356:     ; 160e
+__L00356:     ; 15fd
 	MVI E,000H  ; rel false left
-__L00357:     ; 1610
+__L00357:     ; 15ff
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00358  ; skip if
 	MVI E,00BH  ; load const left
 	LXI H,_GETFILE_KB   ; assign
 	MOV M,E    ; from E
-__L00358:     ; 161b
-__L00359:     ; 161b
+__L00358:     ; 160a
+__L00359:     ; 160a
 	JMP __L00350  ; END
-__L00351:     ; 161e
+__L00351:     ; 160d
 	JMP __L00346  ; END
-__L00347:     ; 1621
+__L00347:     ; 1610
 	JMP __L00340  ; END
-__L00341:     ; 1624
-__L00339:     ; 1624
+__L00341:     ; 1613
+__L00339:     ; 1613
 	LXI H,SIZESET  ; load var left
 	MOV E,M   ; to E
 	MOV A,E
@@ -3211,15 +3194,15 @@ __L00339:     ; 1624
 	LXI D,__L00360  ; load ref left
 	CALL PRINT  ; proc call
 	JMP __L00362  ; skip else
-__L00361:     ; 163a
+__L00361:     ; 1629
 	CALL CRLF  ; proc call
-__L00362:     ; 163d
+__L00362:     ; 162c
 	LXI D,__L00363  ; load ref left
 	CALL PRINTX  ; proc call
 	LXI D,00000H  ; OPT MVIED
 	XCHG    ; from D,E
 	SHLD _GETFILE_L ; assign
-__L00364:     ; 164a
+__L00364:     ; 1639
 	LHLD _GETFILE_L ; load var left
 	XCHG    ; to D,E
 	LHLD _GETFILE_FCBN ; load var right
@@ -3230,16 +3213,16 @@ __L00364:     ; 164a
 	JZ __L00368   ; =
 	JNC __L00366  ; >
 	JMP __L00369  ; <
-__L00368:     ; 165e
+__L00368:     ; 164d
 	MOV A,E
 	CMP C  ; <
 	JNC __L00366 ; >=
-__L00369:     ; 1663
+__L00369:     ; 1652
 	MVI E,001H  ; rel true left
 	JMP __L00367
-__L00366:     ; 1668
+__L00366:     ; 1657
 	MVI E,000H  ; rel false left
-__L00367:     ; 166a
+__L00367:     ; 1659
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00365  ; skip while
@@ -3292,23 +3275,23 @@ __L00367:     ; 166a
 	JZ __L00372 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00373
-__L00372:     ; 16c9
+__L00372:     ; 16b8
 	MVI E,000H  ; rel false left
-__L00373:     ; 16cb
+__L00373:     ; 16ba
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00374  ; skip if
 	LXI D,__L00371  ; load ref left
 	CALL PRINTX  ; proc call
 	JMP __L00375  ; skip else
-__L00374:     ; 16d9
+__L00374:     ; 16c8
 	LHLD 0007DH ; load var left
 	XCHG    ; to D,E
 	LXI B,02710H  ; load const right
 	CALL PDECIMAL  ; proc call
-__L00375:     ; 16e3
+__L00375:     ; 16d2
 	CALL PRINTB  ; proc call
-__L00370:     ; 16e6
+__L00370:     ; 16d5
 	LHLD _GETFILE_I ; load var left
 	XCHG    ; to D,E
 	LXI H,_GETFILE_FCBR  ; load arr left
@@ -3356,7 +3339,7 @@ __L00370:     ; 16e6
 	DAD D    ; arr offset
 	MOV E,M  ; arr element to (D),E
 	MVI C,001H  ; load const right
-__L00376:     ; 1741
+__L00376:     ; 1730
 	MOV A,E
 	RLC  ; ROL
 	MOV E,A
@@ -3371,10 +3354,10 @@ __L00376:     ; 1741
 	MVI E,04FH  ; load const left
 	CALL PRINTCHAR  ; proc call
 	JMP __L00378  ; skip else
-__L00377:     ; 1759
+__L00377:     ; 1748
 	MVI E,057H  ; load const left
 	CALL PRINTCHAR  ; proc call
-__L00378:     ; 175e
+__L00378:     ; 174d
 	CALL PRINTB  ; proc call
 	MVI E,041H  ; load const left
 	PUSH D ; save left binary
@@ -3392,7 +3375,7 @@ __L00378:     ; 175e
 	DAD D    ; arr offset
 	MOV E,M  ; arr element to (D),E
 	MVI C,001H  ; load const right
-__L00379:     ; 177e
+__L00379:     ; 176d
 	MOV A,E
 	RLC  ; ROL
 	MOV E,A
@@ -3408,7 +3391,7 @@ __L00379:     ; 177e
 	JZ __L00380  ; skip if
 	MVI E,028H  ; load const left
 	CALL PRINTCHAR  ; proc call
-__L00380:     ; 1797
+__L00380:     ; 1786
 	CALL PRINTFN  ; proc call
 	LXI H,_GETFILE_MB  ; load var left
 	MOV E,M   ; to E
@@ -3420,7 +3403,7 @@ __L00380:     ; 1797
 	JZ __L00381  ; skip if
 	MVI E,029H  ; load const left
 	CALL PRINTCHAR  ; proc call
-__L00381:     ; 17ac
+__L00381:     ; 179b
 	LHLD _GETFILE_L ; load var left
 	XCHG    ; to D,E
 	LXI B,00001H  ; OPT MVICB
@@ -3428,16 +3411,16 @@ __L00381:     ; 17ac
 	DAD B  ; + left
 	SHLD _GETFILE_L ; assign
 	JMP __L00364  ; END
-__L00365:     ; 17bb
+__L00365:     ; 17aa
 	CALL PRALLOC  ; proc call
-__L00334:     ; 17be
+__L00334:     ; 17ad
 	JMP __L00382  ; skip else
-__L00333:     ; 17c1
-SETFILEATT:     ; 17c1
+__L00333:     ; 17b0
+SETFILEATT:     ; 17b0
 	LXI D,00000H  ; OPT MVIED
 	XCHG    ; from D,E
 	SHLD _GETFILE_L ; assign
-__L00383:     ; 17c8
+__L00383:     ; 17b7
 	LHLD _GETFILE_L ; load var left
 	XCHG    ; to D,E
 	LHLD _GETFILE_FCBN ; load var right
@@ -3448,16 +3431,16 @@ __L00383:     ; 17c8
 	JZ __L00387   ; =
 	JNC __L00385  ; >
 	JMP __L00388  ; <
-__L00387:     ; 17dc
+__L00387:     ; 17cb
 	MOV A,E
 	CMP C  ; <
 	JNC __L00385 ; >=
-__L00388:     ; 17e1
+__L00388:     ; 17d0
 	MVI E,001H  ; rel true left
 	JMP __L00386
-__L00385:     ; 17e6
+__L00385:     ; 17d5
 	MVI E,000H  ; rel false left
-__L00386:     ; 17e8
+__L00386:     ; 17d7
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00384  ; skip while
@@ -3470,7 +3453,7 @@ __L00386:     ; 17e8
 	JZ __L00389  ; skip if
 	CALL ABORTMSG  ; proc call
 	RET  ; proc return
-__L00389:     ; 17fd
+__L00389:     ; 17ec
 	LHLD _GETFILE_L ; load var left
 	SHLD _GETFILE_I ; assign
 	CALL MULTI16  ; proc call
@@ -3488,7 +3471,7 @@ __L00389:     ; 17fd
 	MOV D,M
 	XCHG
 	PCHL  ; go to CASE
-__L00392:     ; 181e
+__L00392:     ; 180d
 	LXI D,00009H  ; OPT MVIED
 	LHLD _GETFILE_FCBSA  ; load arr based left
 	DAD D    ; arr offset
@@ -3503,7 +3486,7 @@ __L00392:     ; 181e
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
 	JMP __L00391  ; end CASE
-__L00393:     ; 1837
+__L00393:     ; 1826
 	LXI D,00009H  ; OPT MVIED
 	LHLD _GETFILE_FCBSA  ; load arr based left
 	DAD D    ; arr offset
@@ -3518,7 +3501,7 @@ __L00393:     ; 1837
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
 	JMP __L00391  ; end CASE
-__L00394:     ; 1850
+__L00394:     ; 183f
 	LXI D,0000AH  ; OPT MVIED
 	LHLD _GETFILE_FCBSA  ; load arr based left
 	DAD D    ; arr offset
@@ -3533,7 +3516,7 @@ __L00394:     ; 1850
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
 	JMP __L00391  ; end CASE
-__L00395:     ; 1869
+__L00395:     ; 1858
 	LXI D,0000AH  ; OPT MVIED
 	LHLD _GETFILE_FCBSA  ; load arr based left
 	DAD D    ; arr offset
@@ -3548,7 +3531,7 @@ __L00395:     ; 1869
 	POP D  ; arr restore left
 	MOV M,E  ; arr assign from (D),C
 	JMP __L00391  ; end CASE
-__L00391:     ; 1882
+__L00391:     ; 1871
 	LXI D,0005CH  ; OPT MVIED
 	PUSH D  ; proc ext arg
 	MVI E,010H  ; load const left
@@ -3570,9 +3553,8 @@ __L00391:     ; 1882
 	LXI H,_GETFILE_SCASE  ; load var left
 	MOV E,M   ; to E
 	MVI C,002H  ; load const right
-__L00397:     ; 18ac
-	STC
-	CMC
+__L00397:     ; 189b
+	ORA A  ; clear carry
 	MOV A,E
 	RAL  ; SHL
 	MOV E,A
@@ -3590,10 +3572,10 @@ __L00397:     ; 18ac
 	DAD B  ; + left
 	SHLD _GETFILE_L ; assign
 	JMP __L00383  ; END
-__L00384:     ; 18ce
-__L00382:     ; 18ce
+__L00384:     ; 18bc
+__L00382:     ; 18bc
 	RET  ; proc return
-SETDRIVESTATUS:     ; 18cf
+SETDRIVESTATUS:     ; 18bd
 	CALL SCAN  ; proc call
 	CALL SCAN  ; proc call
 	LXI D,00000H  ; OPT MVIED
@@ -3605,9 +3587,9 @@ SETDRIVESTATUS:     ; 18cf
 	JNZ __L00398 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00399
-__L00398:     ; 18e8
+__L00398:     ; 18d6
 	MVI E,000H  ; rel false left
-__L00399:     ; 18ea
+__L00399:     ; 18d8
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00400  ; skip if
@@ -3623,12 +3605,12 @@ __L00399:     ; 18ea
 	CALL SETDISK  ; proc call
 	CALL WRITEPROT  ; proc call
 	JMP __L00404  ; skip else
-__L00402:     ; 190a
+__L00402:     ; 18f8
 	LXI D,__L00403  ; load ref left
 	CALL PRINT  ; proc call
-__L00404:     ; 1910
+__L00404:     ; 18fe
 	JMP __L00405  ; skip else
-__L00400:     ; 1913
+__L00400:     ; 1901
 	CALL SETDISK  ; proc call
 	LXI D,_STATUS_DEVL  ; load ref left
 	MVI C,008H  ; load const right
@@ -3638,20 +3620,20 @@ __L00400:     ; 1913
 	JNZ __L00406 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00407
-__L00406:     ; 1929
+__L00406:     ; 1917
 	MVI E,000H  ; rel false left
-__L00407:     ; 192b
+__L00407:     ; 1919
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00408  ; skip if
 	CALL DRIVESTATUS  ; proc call
 	JMP __L00409  ; skip else
-__L00408:     ; 1936
+__L00408:     ; 1924
 	CALL GETFILE  ; proc call
-__L00409:     ; 1939
-__L00405:     ; 1939
+__L00409:     ; 1927
+__L00405:     ; 1927
 	RET  ; proc return
-STATUS:     ; 193a
+STATUS:     ; 1928
 	LXI H,__ENDCOM  ; exit address
 	PUSH H
 	LXI H,00000H  ; load STACKPTR left
@@ -3670,16 +3652,16 @@ STATUS:     ; 193a
 	JZ __L00411
 	MVI E,001H  ; rel true left
 	JMP __L00412
-__L00411:     ; 1960
+__L00411:     ; 194e
 	MVI E,000H  ; rel false left
-__L00412:     ; 1962
+__L00412:     ; 1950
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00413  ; skip if
 	LXI D,__L00410  ; load ref left
 	CALL PRINT  ; proc call
 	JMP __L00414  ; skip else
-__L00413:     ; 1970
+__L00413:     ; 195e
 	MVI E,001H  ; load const left
 	LXI H,_STATUS_IBP   ; assign
 	MOV M,E    ; from E
@@ -3692,9 +3674,9 @@ __L00413:     ; 1970
 	JNZ __L00415 ; !=
 	MVI E,001H  ; rel true left
 	JMP __L00416
-__L00415:     ; 1989
+__L00415:     ; 1977
 	MVI E,000H  ; rel false left
-__L00416:     ; 198b
+__L00416:     ; 1979
 	PUSH D ; save left binary
 	LXI D,00001H  ; OPT MVIED
 	LXI H,0005CH  ; load arr left
@@ -3705,9 +3687,9 @@ __L00416:     ; 198b
 	JNZ __L00417 ; !=
 	MVI C,001H  ; rel true right
 	JMP __L00418
-__L00417:     ; 199f
+__L00417:     ; 198d
 	MVI C,000H  ; rel false right
-__L00418:     ; 19a1
+__L00418:     ; 198f
 	POP D  ; restore left binary
 	MOV A,C
 	ANA E    ; & left
@@ -3717,7 +3699,7 @@ __L00418:     ; 19a1
 	JZ __L00419  ; skip if
 	CALL PRSTATUS  ; proc call
 	JMP __L00420  ; skip else
-__L00419:     ; 19b0
+__L00419:     ; 199e
 	LXI D,00000H  ; OPT MVIED
 	LXI H,0005CH  ; load arr left
 	DAD D    ; arr offset
@@ -3727,15 +3709,15 @@ __L00419:     ; 19b0
 	JZ __L00421 ; =
 	MVI E,001H  ; rel true left
 	JMP __L00422
-__L00421:     ; 19c3
+__L00421:     ; 19b1
 	MVI E,000H  ; rel false left
-__L00422:     ; 19c5
+__L00422:     ; 19b3
 	XRA A  ; A = 0
 	CMP E  ; rel result
 	JZ __L00423  ; skip if
 	CALL SETDRIVESTATUS  ; proc call
 	JMP __L00424  ; skip else
-__L00423:     ; 19d0
+__L00423:     ; 19be
 	CALL DEVREQ  ; proc call
 	MOV A,E
 	CMA      ; NOT left
@@ -3745,53 +3727,53 @@ __L00423:     ; 19d0
 	CMP E  ; rel result
 	JZ __L00425  ; skip if
 	CALL GETFILE  ; proc call
-__L00425:     ; 19e0
-__L00424:     ; 19e0
-__L00420:     ; 19e0
-__L00414:     ; 19e0
+__L00425:     ; 19ce
+__L00424:     ; 19ce
+__L00420:     ; 19ce
+__L00414:     ; 19ce
 	LHLD _STATUS_OLDSP ; load var left
 	SPHL  ; assign STACKPTR
 	RET  ; proc return
 	RET  ; program end
 __L00390:	DW  __L00392, __L00393, __L00394, __L00395
-__L00081	DB  02AH,02AH,020H,041H,062H,06FH,072H,074H,065H,064H,020H,02AH,02AH,000H    ; 19e6
-__L00082	DB  041H,063H,074H,069H,076H,065H,020H,055H,073H,065H,072H,020H,03AH,000H    ; 19f4
-__L00083	DB  041H,063H,074H,069H,076H,065H,020H,046H,069H,06CH,065H,073H,03AH,000H    ; 1a02
-__L00099	DB  020H,020H,020H,020H,000H    ; 1a10
-__L00100	DB  020H,044H,072H,069H,076H,065H,020H,043H,068H,061H,072H,061H,063H,074H,065H,072H,069H,073H,074H,069H,063H,073H,000H    ; 1a15
-__L00102	DB  036H,035H,035H,033H,036H,03AH,020H,000H    ; 1a2c
-__L00113	DB  031H,032H,038H,020H,042H,079H,074H,065H,020H,052H,065H,063H,06FH,072H,064H,020H,043H,061H,070H,061H,063H,069H,074H,079H,000H    ; 1a34
-__L00114	DB  04BH,069H,06CH,06FH,062H,079H,074H,065H,020H,044H,072H,069H,076H,065H,020H,020H,043H,061H,070H,061H,063H,069H,074H,079H,000H    ; 1a4d
-__L00115	DB  033H,032H,020H,020H,042H,079H,074H,065H,020H,044H,069H,072H,065H,063H,074H,06FH,072H,079H,020H,045H,06EH,074H,072H,069H,065H,073H,000H    ; 1a66
-__L00117	DB  043H,068H,065H,063H,06BH,065H,064H,020H,020H,044H,069H,072H,065H,063H,074H,06FH,072H,079H,020H,045H,06EH,074H,072H,069H,065H,073H,000H    ; 1a81
-__L00120	DB  052H,065H,063H,06FH,072H,064H,073H,02FH,020H,045H,078H,074H,065H,06EH,074H,000H    ; 1a9c
-__L00121	DB  052H,065H,063H,06FH,072H,064H,073H,02FH,020H,042H,06CH,06FH,063H,06BH,000H    ; 1aac
-__L00122	DB  053H,065H,063H,074H,06FH,072H,073H,02FH,020H,054H,072H,061H,063H,06BH,000H    ; 1abb
-__L00123	DB  052H,065H,073H,065H,072H,076H,065H,064H,020H,054H,072H,061H,063H,06BH,073H,000H    ; 1aca
-__L00160	DB  020H,069H,073H,020H,000H    ; 1ada
-__L00167	DB  054H,065H,06DH,070H,020H,052H,02FH,04FH,020H,044H,069H,073H,06BH,03AH,020H,064H,03AH,03DH,052H,02FH,04FH,000H    ; 1adf
-__L00168	DB  053H,065H,074H,020H,049H,06EH,064H,069H,063H,061H,074H,06FH,072H,03AH,020H,064H,03AH,066H,069H,06CH,065H,06EH,061H,06DH,065H,02EH,074H,079H,070H,020H,024H,052H,02FH,04FH,020H,024H,052H,02FH,057H,020H,024H,053H,059H,053H,020H,024H,044H,049H,052H,000H    ; 1af5
-__L00169	DB  044H,069H,073H,06BH,020H,053H,074H,061H,074H,075H,073H,020H,020H,03AH,020H,044H,053H,04BH,03AH,020H,064H,03AH,044H,053H,04BH,03AH,000H    ; 1b27
-__L00170	DB  055H,073H,065H,072H,020H,053H,074H,061H,074H,075H,073H,020H,020H,03AH,020H,055H,053H,052H,03AH,000H    ; 1b42
-__L00171	DB  049H,06FH,062H,079H,074H,065H,020H,041H,073H,073H,069H,067H,06EH,03AH,000H    ; 1b56
-__L00176	DB  020H,03DH,000H    ; 1b65
-__L00194	DB  042H,061H,064H,020H,044H,065H,06CH,069H,06DH,069H,074H,065H,072H,000H    ; 1b68
-__L00198	DB  049H,06EH,076H,061H,06CH,069H,064H,020H,041H,073H,073H,069H,067H,06EH,06DH,065H,06EH,074H,000H    ; 1b76
-__L00211	DB  042H,061H,064H,020H,044H,065H,06CH,069H,06DH,069H,074H,065H,072H,000H    ; 1b89
-__L00228	DB  03AH,020H,000H    ; 1b97
-__L00229	DB  042H,079H,074H,065H,073H,020H,052H,065H,06DH,061H,069H,06EH,069H,06EH,067H,020H,04FH,06EH,020H,000H    ; 1b9a
-__L00237	DB  052H,02FH,000H    ; 1bae
-__L00240	DB  02CH,020H,053H,070H,061H,063H,065H,03AH,020H,000H    ; 1bb1
-__L00255	DB  049H,06EH,076H,061H,06CH,069H,064H,020H,046H,069H,06CH,065H,020H,049H,06EH,064H,069H,063H,061H,074H,06FH,072H,000H    ; 1bbb
-__L00307	DB  02AH,02AH,020H,054H,06FH,06FH,020H,04DH,061H,06EH,079H,020H,046H,069H,06CH,065H,073H,020H,02AH,02AH,000H    ; 1bd2
-__L00330	DB  046H,069H,06CH,065H,020H,04EH,06FH,074H,020H,046H,06FH,075H,06EH,064H,000H    ; 1be7
-__L00360	DB  020H,053H,069H,07AH,065H,020H,000H    ; 1bf6
-__L00363	DB  020H,052H,065H,063H,073H,020H,020H,042H,079H,074H,065H,073H,020H,020H,045H,078H,074H,020H,041H,063H,063H,000H    ; 1bfd
-__L00371	DB  036H,035H,035H,033H,036H,000H    ; 1c13
-__L00396	DB  020H,073H,065H,074H,020H,074H,06FH,020H,000H    ; 1c19
-__L00401	DB  052H,02FH,04FH,020H    ; 1c22
-__L00403	DB  049H,06EH,076H,061H,06CH,069H,064H,020H,044H,069H,073H,06BH,020H,041H,073H,073H,069H,067H,06EH,06DH,065H,06EH,074H,000H    ; 1c26
-__L00410	DB  057H,072H,06FH,06EH,067H,020H,043H,050H,02FH,04DH,020H,056H,065H,072H,073H,069H,06FH,06EH,020H,028H,052H,065H,071H,075H,069H,072H,065H,073H,020H,032H,02EH,030H,029H,000H    ; 1c3e
+__L00081	DB  02AH,02AH,020H,041H,062H,06FH,072H,074H,065H,064H,020H,02AH,02AH,000H    ; 19d4
+__L00082	DB  041H,063H,074H,069H,076H,065H,020H,055H,073H,065H,072H,020H,03AH,000H    ; 19e2
+__L00083	DB  041H,063H,074H,069H,076H,065H,020H,046H,069H,06CH,065H,073H,03AH,000H    ; 19f0
+__L00099	DB  020H,020H,020H,020H,000H    ; 19fe
+__L00100	DB  020H,044H,072H,069H,076H,065H,020H,043H,068H,061H,072H,061H,063H,074H,065H,072H,069H,073H,074H,069H,063H,073H,000H    ; 1a03
+__L00102	DB  036H,035H,035H,033H,036H,03AH,020H,000H    ; 1a1a
+__L00113	DB  031H,032H,038H,020H,042H,079H,074H,065H,020H,052H,065H,063H,06FH,072H,064H,020H,043H,061H,070H,061H,063H,069H,074H,079H,000H    ; 1a22
+__L00114	DB  04BH,069H,06CH,06FH,062H,079H,074H,065H,020H,044H,072H,069H,076H,065H,020H,020H,043H,061H,070H,061H,063H,069H,074H,079H,000H    ; 1a3b
+__L00115	DB  033H,032H,020H,020H,042H,079H,074H,065H,020H,044H,069H,072H,065H,063H,074H,06FH,072H,079H,020H,045H,06EH,074H,072H,069H,065H,073H,000H    ; 1a54
+__L00117	DB  043H,068H,065H,063H,06BH,065H,064H,020H,020H,044H,069H,072H,065H,063H,074H,06FH,072H,079H,020H,045H,06EH,074H,072H,069H,065H,073H,000H    ; 1a6f
+__L00120	DB  052H,065H,063H,06FH,072H,064H,073H,02FH,020H,045H,078H,074H,065H,06EH,074H,000H    ; 1a8a
+__L00121	DB  052H,065H,063H,06FH,072H,064H,073H,02FH,020H,042H,06CH,06FH,063H,06BH,000H    ; 1a9a
+__L00122	DB  053H,065H,063H,074H,06FH,072H,073H,02FH,020H,054H,072H,061H,063H,06BH,000H    ; 1aa9
+__L00123	DB  052H,065H,073H,065H,072H,076H,065H,064H,020H,054H,072H,061H,063H,06BH,073H,000H    ; 1ab8
+__L00160	DB  020H,069H,073H,020H,000H    ; 1ac8
+__L00167	DB  054H,065H,06DH,070H,020H,052H,02FH,04FH,020H,044H,069H,073H,06BH,03AH,020H,064H,03AH,03DH,052H,02FH,04FH,000H    ; 1acd
+__L00168	DB  053H,065H,074H,020H,049H,06EH,064H,069H,063H,061H,074H,06FH,072H,03AH,020H,064H,03AH,066H,069H,06CH,065H,06EH,061H,06DH,065H,02EH,074H,079H,070H,020H,024H,052H,02FH,04FH,020H,024H,052H,02FH,057H,020H,024H,053H,059H,053H,020H,024H,044H,049H,052H,000H    ; 1ae3
+__L00169	DB  044H,069H,073H,06BH,020H,053H,074H,061H,074H,075H,073H,020H,020H,03AH,020H,044H,053H,04BH,03AH,020H,064H,03AH,044H,053H,04BH,03AH,000H    ; 1b15
+__L00170	DB  055H,073H,065H,072H,020H,053H,074H,061H,074H,075H,073H,020H,020H,03AH,020H,055H,053H,052H,03AH,000H    ; 1b30
+__L00171	DB  049H,06FH,062H,079H,074H,065H,020H,041H,073H,073H,069H,067H,06EH,03AH,000H    ; 1b44
+__L00176	DB  020H,03DH,000H    ; 1b53
+__L00194	DB  042H,061H,064H,020H,044H,065H,06CH,069H,06DH,069H,074H,065H,072H,000H    ; 1b56
+__L00198	DB  049H,06EH,076H,061H,06CH,069H,064H,020H,041H,073H,073H,069H,067H,06EH,06DH,065H,06EH,074H,000H    ; 1b64
+__L00211	DB  042H,061H,064H,020H,044H,065H,06CH,069H,06DH,069H,074H,065H,072H,000H    ; 1b77
+__L00228	DB  03AH,020H,000H    ; 1b85
+__L00229	DB  042H,079H,074H,065H,073H,020H,052H,065H,06DH,061H,069H,06EH,069H,06EH,067H,020H,04FH,06EH,020H,000H    ; 1b88
+__L00237	DB  052H,02FH,000H    ; 1b9c
+__L00240	DB  02CH,020H,053H,070H,061H,063H,065H,03AH,020H,000H    ; 1b9f
+__L00255	DB  049H,06EH,076H,061H,06CH,069H,064H,020H,046H,069H,06CH,065H,020H,049H,06EH,064H,069H,063H,061H,074H,06FH,072H,000H    ; 1ba9
+__L00307	DB  02AH,02AH,020H,054H,06FH,06FH,020H,04DH,061H,06EH,079H,020H,046H,069H,06CH,065H,073H,020H,02AH,02AH,000H    ; 1bc0
+__L00330	DB  046H,069H,06CH,065H,020H,04EH,06FH,074H,020H,046H,06FH,075H,06EH,064H,000H    ; 1bd5
+__L00360	DB  020H,053H,069H,07AH,065H,020H,000H    ; 1be4
+__L00363	DB  020H,052H,065H,063H,073H,020H,020H,042H,079H,074H,065H,073H,020H,020H,045H,078H,074H,020H,041H,063H,063H,000H    ; 1beb
+__L00371	DB  036H,035H,035H,033H,036H,000H    ; 1c01
+__L00396	DB  020H,073H,065H,074H,020H,074H,06FH,020H,000H    ; 1c07
+__L00401	DB  052H,02FH,04FH,020H    ; 1c10
+__L00403	DB  049H,06EH,076H,061H,06CH,069H,064H,020H,044H,069H,073H,06BH,020H,041H,073H,073H,069H,067H,06EH,06DH,065H,06EH,074H,000H    ; 1c14
+__L00410	DB  057H,072H,06FH,06EH,067H,020H,043H,050H,02FH,04DH,020H,056H,065H,072H,073H,069H,06FH,06EH,020H,028H,052H,065H,071H,075H,069H,072H,065H,073H,020H,032H,02EH,030H,029H,000H    ; 1c2c
 
 __CPMENT	EQU 00005H
 MON1:
