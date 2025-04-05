@@ -1,10 +1,13 @@
-
+"""
+Floppy disk controller devices
+"""
 
 from threading import Thread
 import time
 
 from dev.disk import Disk
 
+from pqueue import PQueue
 
 def create_disk(nhead, ntrack, nsector, nbytes, datFile):
     dsk = FloppyDisk(nhead, ntrack, nsector, nbytes, datFile)
@@ -14,7 +17,10 @@ class FloppyDisk(Disk): pass
 
 
 class nec765(object):
-
+    """
+    NEC 765 floppy controller
+    """
+    
     class CmdDesc(object):
     
         def __init__(self, cmdCount, cmdFunc):
@@ -46,6 +52,7 @@ class nec765(object):
         self._scur = 0
         self._ccount = 0
         self._ccur = 0
+        self._cmd_queue = PQueue(1)
         self._write_buf = bytearray(secSize)
         self._read_buf = None
         self._data_idx = 0
@@ -82,6 +89,8 @@ class nec765(object):
             0xe5 : writeCmd,
         }
 
+        Thread(target = self._cmd_exec).start()
+        
     def size(self):
         return 2
 
@@ -103,9 +112,8 @@ class nec765(object):
             self._read_buf = drv.disk.read_sec(drv.cur_track, sector, drv.cur_head)
             drv.cur_sec = sector
             i = 0
-        value = self._read_buf[i]
         self._data_idx = i + 1    
-        return value
+        return self._read_buf[i]
         
     def data_write(self, value):
         i = self._data_idx
@@ -138,7 +146,8 @@ class nec765(object):
             self._ccur += 1
             if self._ccur == self._ccount:
                 self._msr &= 0x2f
-                Thread(target = self._cur_cmd.cmd_func).start()
+                self._cmd_queue.put(self._cur_cmd.cmd_func)
+                time.sleep(0.0)
                 self._cur_cmd = None
                 self._ccount = 0
                 self._ccur = 0
@@ -157,6 +166,16 @@ class nec765(object):
                 self._scount= 0
                 self._scur = 0
             return rv
+            
+    def _cmd_exec(self):
+        cq = self._cmd_queue
+        while True:
+            cf = cq.get(2.0)
+            if cf is None:
+                if self._proc.halted():
+                    return 
+            else:
+                cf()
         
     def _intr_status(self):
         #print("nec765 cmd int sense")
@@ -207,7 +226,7 @@ class nec765(object):
         track = cregs[2]
         head = cregs[3]
         sector = cregs[4]
-        nbytes = (cregs[5] * 256)
+        nbytes = (cregs[5] << 8)
         self._scount = 7
         #print("nec765 cmd read %d %d %d %d" % (drv.drv_num, track, sector, nbytes))
         if      (track != drv.cur_track) or \
@@ -226,22 +245,20 @@ class nec765(object):
                 sregs[2] |= 0x10
             sregs[3:7] = cregs[2:6]
             self._msr |= 0xd0
-            self._intr_ctl.intr(self._intr_level)
-            self._read_buf = None
-            return
-        self._cur_drv = drv
-        drv.cur_head = head
-        drv.cur_sec = sector
-        self._read_buf = disk.read_sec(track, sector, head)
-        self._wait_dma()
-        sregs[0] = (drv.drv_num | (head << 2))
-        sregs[1] = 0x00
-        sregs[2] = 0x00
-        sregs[3] = track
-        sregs[4] = head
-        sregs[5] = drv.cur_sec
-        sregs[6] = cregs[5]
-        self._msr |= 0xd0
+        else:
+            self._cur_drv = drv
+            drv.cur_head = head
+            drv.cur_sec = sector
+            self._read_buf = disk.read_sec(track, sector, head)
+            self._wait_dma()
+            sregs[0] = (drv.drv_num | (head << 2))
+            sregs[1] = 0x00
+            sregs[2] = 0x00
+            sregs[3] = track
+            sregs[4] = head
+            sregs[5] = drv.cur_sec
+            sregs[6] = cregs[5]
+            self._msr |= 0xd0
         self._intr_ctl.intr(self._intr_level)
         self._read_buf = None
         
@@ -253,7 +270,7 @@ class nec765(object):
         track = cregs[2]
         head = cregs[3]
         sector = cregs[4]
-        nbytes = (cregs[5] * 256)
+        nbytes = (cregs[5] << 8)
         self._scount = 7
         #print("nec765 cmd write %d %d %d %d" % (drv.drv_num, track, sector, nbytes))
         if      (track != drv.cur_track) or \
@@ -272,21 +289,19 @@ class nec765(object):
                 sregs[2] |= 0x10
             sregs[3:7] = cregs[2:6]
             self._msr |= 0xd0
-            self._intr_ctl.intr(self._intr_level)
-            self._read_buf = None
-            return
-        self._cur_drv = drv
-        drv.cur_head = head
-        drv.cur_sec = sector
-        self._wait_dma()
-        sregs[0] = (drv.drv_num | (head << 2))
-        sregs[1] = 0x00
-        sregs[2] = 0x00
-        sregs[3] = track
-        sregs[4] = head
-        sregs[5] = drv.cur_sec
-        sregs[6] = cregs[5]
-        self._msr |= 0xd0
+        else:
+            self._cur_drv = drv
+            drv.cur_head = head
+            drv.cur_sec = sector
+            self._wait_dma()
+            sregs[0] = (drv.drv_num | (head << 2))
+            sregs[1] = 0x00
+            sregs[2] = 0x00
+            sregs[3] = track
+            sregs[4] = head
+            sregs[5] = drv.cur_sec
+            sregs[6] = cregs[5]
+            self._msr |= 0xd0
         self._intr_ctl.intr(self._intr_level)
         self._read_buf = None
         
@@ -297,5 +312,5 @@ class nec765(object):
         while not self._eot_flag:
             if self._proc.halted():
                 return
-            time.sleep(0)
+            time.sleep(0.0)
         
