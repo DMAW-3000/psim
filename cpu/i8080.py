@@ -31,8 +31,6 @@ class i8080(Processor):
         self._mr = memAs.read8
         self._mw = memAs.write8
         
-        self._rng8 = range(8)
-        
         self._a = 0x00
         self._b = 0x00
         self._c = 0x00
@@ -732,15 +730,13 @@ class i8080(Processor):
             
     def _set_flags(self, value):
         f = self._flags
-        f.z = value == 0x00
+        f.z = not value
         f.s = (value & 0x80) != 0x00
         n = 0
-        m = 0x80
-        for i in self._rng8:
-            if value & m:
-                n += 1
-            m >>= 1
-        f.p = (n & 0x01) == 0x00
+        while value:
+            value &= (value - 1)
+            n += 1
+        f.p = not (n & 0x01)
 
     def _check_flags(self, code):
         f = self._flags
