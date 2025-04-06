@@ -17,6 +17,33 @@ class i8080(Processor):
             self.cy = False
             self.ac = False
             
+        def set_flags(self, value):
+            self.z = not value
+            self.s = (value & 0x80) != 0x00
+            n = 0
+            while value:
+                value &= (value - 1)
+                n += 1
+            self.p = not (n & 0x01)
+            
+        def check_flags(self, code):
+            if code == 0:
+                return not self.z
+            elif code == 1:
+                return self.z
+            elif code == 2:
+                return not self.cy
+            elif code == 3:
+                return self.cy
+            elif code == 4:
+                return not self.p
+            elif code == 5:
+                return self.p
+            elif code == 6:
+                return not self.s
+            else:
+                return self.s
+
 
     def __init__(self, memAs, ioAs, clkMod = 4, clkOut = None):
         Processor.__init__(self, clkMod, clkOut)
@@ -272,7 +299,7 @@ class i8080(Processor):
         f.cy = (x > 255)
         x &= 0xff
         self._a = x
-        self._set_flags(x)
+        f.set_flags(x)
         return 1
         
     def _STC(self, op):
@@ -309,8 +336,9 @@ class i8080(Processor):
         x = self._reg_read(ddd)
         t = (x + 1) & 0xff
         self._reg_write(ddd, t)
-        self._flags.ac = (((x & 0x0f) + 1) > 0x0f)
-        self._set_flags(t)
+        f = self._flags
+        f.ac = (((x & 0x0f) + 1) > 0x0f)
+        f.set_flags(t)
         return 1
     
     def _DCR(self, op):
@@ -318,8 +346,9 @@ class i8080(Processor):
         x = self._reg_read(ddd)
         t = (x - 1) & 0xff
         self._reg_write(ddd, t)
-        self._flags.ac = (((x & 0x0f) + 1) > 0x0f)
-        self._set_flags(t)
+        f = self._flags
+        f.ac = (((x & 0x0f) + 1) > 0x0f)
+        f.set_flags(t)
         return 1
     
     def _INX(self, op):
@@ -403,7 +432,7 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) + (y & 0x0f)) > 0x0f)
         x0 &= 0xff
         self._a = x0
-        self._set_flags(x0)
+        f.set_flags(x0)
         return 1
 
     def _ADC(self, sss):
@@ -416,7 +445,7 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) + (y & 0x0f) + c) > 0x0f)
         x0 &= 0xff
         self._a = x0
-        self._set_flags(x0)
+        f.set_flags(x0)
         return 1
 
     def _SUB(self, sss):
@@ -428,7 +457,7 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) - (y & 0x0f)) < 0)
         x0 &= 0xff
         self._a = x0
-        self._set_flags(x0)
+        f.set_flags(x0)
         return 1
 
     def _SBB(self, sss):
@@ -441,25 +470,28 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) - (y & 0x0f) - c) < 0)
         x0 &= 0xff
         self._a = x0 
-        self._set_flags(x0)
+        f.set_flags(x0)
         return 1
 
     def _ORA(self, sss):
         self._a = t = self._a | self._reg_read(sss)
-        self._flags.cy = False
-        self._set_flags(t)
+        f = self._flags
+        f.cy = False
+        f.set_flags(t)
         return 1
         
     def _ANA(self, sss):
         self._a = t = self._a & self._reg_read(sss)
-        self._flags.cy = False
-        self._set_flags(t)
+        f = self._flags
+        f.cy = False
+        f.set_flags(t)
         return 1
 
     def _XRA(self, sss):
         self._a = t = self._a ^ self._reg_read(sss)
-        self._flags.cy = False
-        self._set_flags(t)
+        f = self._flags
+        f.cy = False
+        f.set_flags(t)
         return 1
         
     def _CMP(self, sss):
@@ -469,7 +501,7 @@ class i8080(Processor):
         t = x - y
         f.cy = (t < 0)
         f.ac = (((x & 0x0f) - (y & 0x0f)) < 0)
-        self._set_flags(t & 0xff)
+        f.set_flags(t & 0xff)
         return 1
 
     def _JMP(self, op):
@@ -506,7 +538,7 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) + (y & 0x0f)) > 0x0f)
         t &= 0xff
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 2
 
     def _ACI(self, op):
@@ -519,7 +551,7 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) + (y & 0x0f) + c) > 0x0f)
         t &= 0xff
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 2
 
     def _SUI(self, op):
@@ -531,7 +563,7 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) - (y & 0x0f)) < 0)
         t &= 0xff
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 2
 
     def _SBI(self, op):
@@ -544,7 +576,7 @@ class i8080(Processor):
         f.ac = (((x & 0x0f) - (y & 0x0f) - c) < 0)
         t &= 0xff
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 2
 
     def _CPI(self, op):
@@ -554,7 +586,7 @@ class i8080(Processor):
         t = x - y
         f.cy = (t < 0)
         f.ac = (((x & 0x0f) - (y & 0x0f)) < 0)
-        self._set_flags(t & 0xff)
+        f.set_flags(t & 0xff)
         return 2
 
     def _IN(self, op): 
@@ -567,20 +599,23 @@ class i8080(Processor):
 
     def _ANI(self, op): 
         self._a = t = self._a & self._mr(self._pc + 1)
-        self._flags.cy = False
-        self._set_flags(t)
+        f = self._flags
+        f.cy = False
+        f.set_flags(t)
         return 2
 
     def _ORI(self, op):
         self._a = t = self._a | self._mr(self._pc + 1)
-        self._flags.cy = False
-        self._set_flags(t)
+        f = self._flags
+        f.cy = False
+        f.set_flags(t)
         return 2
 
     def _XRI(self, op):
         self._a = t = self._a ^ self._mr(self._pc + 1)
-        self._flags.cy = False
-        self._set_flags(t)
+        f = self._flags
+        f.cy = False
+        f.set_flags(t)
         return 2
 
     def _PCHL(self, op):
@@ -681,7 +716,7 @@ class i8080(Processor):
         return 1
         
     def _Jc(self, op): 
-        if self._check_flags((op & 0x38) >> 3):
+        if self._flags.check_flags((op & 0x38) >> 3):
             mr = self._mr
             pc = self._pc
             self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
@@ -690,7 +725,7 @@ class i8080(Processor):
             return 3
             
     def _Cc(self, op):
-        if self._check_flags((op & 0x38) >> 3):
+        if self._flags.check_flags((op & 0x38) >> 3):
             pc = self._pc
             sp = self._sp
             an = pc + 3
@@ -705,7 +740,7 @@ class i8080(Processor):
             return 3
             
     def _Rc(self, op):
-        if self._check_flags((op & 0x38) >> 3):
+        if self._flags.check_flags((op & 0x38) >> 3):
             mr = self._mr
             sp = self._sp
             self._pc = mr(sp) + (mr(sp + 1) << 8) 
@@ -727,35 +762,6 @@ class i8080(Processor):
         self._sp = (sp - 2) & 0xffff
         self._pc = op & 0x38
         return 0
-            
-    def _set_flags(self, value):
-        f = self._flags
-        f.z = not value
-        f.s = (value & 0x80) != 0x00
-        n = 0
-        while value:
-            value &= (value - 1)
-            n += 1
-        f.p = not (n & 0x01)
-
-    def _check_flags(self, code):
-        f = self._flags
-        if code == 0:
-            return not f.z
-        elif code == 1:
-            return f.z
-        elif code == 2:
-            return not f.cy
-        elif code == 3:
-            return f.cy
-        elif code == 4:
-            return not f.p
-        elif code == 5:
-            return f.p
-        elif code == 6:
-            return not f.s
-        else:
-            return f.s
 
     def _reg_read(self, code):
         return getattr(self, self._reg_map[code])
