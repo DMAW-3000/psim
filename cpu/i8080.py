@@ -6,7 +6,7 @@ class i8080(Processor):
     Intel 8080 processor
     """
 
-    class _Flags(object):
+    class Flags(object):
         """
         8080 flags
         """
@@ -48,7 +48,7 @@ class i8080(Processor):
     def __init__(self, memAs, ioAs, clkMod = 4, clkOut = None):
         Processor.__init__(self, clkMod, clkOut)
         
-        self._flags = self._Flags()
+        self._flags = self.Flags()
         self._mem = memAs
         self._io = ioAs
         self._iv = None
@@ -805,5 +805,11 @@ class i8085(i8080):
     """
     Intel 8085 processor
     """
-    pass
+    
+    def __init__(self, memAs, ioAs, clkMod = 4, clkOut = None, sodOut = None):
+        i8080.__init__(self, memAs, ioAs, clkMod, clkOut)
+        self._sod_out = sodOut
+        
+    
+    
         

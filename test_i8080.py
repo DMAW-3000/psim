@@ -2,7 +2,7 @@
 import unittest
 
 from memory import *
-from cpu.i8080 import i8080
+from cpu.i8080 import *
 
 
 class Test_i8080(unittest.TestCase):
@@ -813,6 +813,64 @@ class Test_i8080(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x0002)
         self.assertEqual(self._ports._m[20], 0x2c)
+        
+
+class Test_i8085(unittest.TestCase):
+
+    def setUp(self):
+        self._mem = AddressSpace()
+        self._ram = RAM(32)
+        self._mem.add(0x0000, self._ram, "TRAM")
+        self._io  = AddressSpace()
+        self._ports = RAM(32)
+        self._io.add(0x0000, self._ports, "TIOP")
+        self._proc = i8085(self._mem, self._io)
+        
+    def clear(self):
+        self._proc.reset()
+        self.clear_regs()
+        self.clear_flags()
+        self.clear_ram()
+        self.clear_ports()
+        
+    def clear_regs(self):
+        self._proc._a = 0x00
+        self._proc._b = 0x00
+        self._proc._c = 0x00
+        self._proc._d = 0x00
+        self._proc._e = 0x00
+        self._proc._h = 0x00
+        self._proc._l = 0x00
+        self._proc._sp = 0x0000
+        
+    def clear_flags(self):
+        self._proc._flags.z = False
+        self._proc._flags.s = False
+        self._proc._flags.p = False
+        self._proc._flags.cy = False
+        self._proc._flags.ac = False
+        
+    def clear_ram(self):
+        for n in range(self._ram.size()):
+            self._ram._m[n] = 0x00
+            
+    def clear_ports(self):
+        for n in range(self._ports.size()):
+            self._ports._m[n] = 0x00
+        
+    def test_reset(self):
+        self._proc.reset()
+        self.assertEqual(self._proc._pc, 0x0000)
+        self.assertFalse(self._proc._ie)
+        
+    def test_nop(self):
+        self.clear()
+        self._ram._m[0] = 0x00
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x00)
+        self.assertEqual(self._proc._pc, 0x0001)
+
+    
        
 if __name__ == '__main__':
    
