@@ -243,27 +243,25 @@ class i8080(Processor):
         
     def _RRC(self, op):
         a = self._a
-        f = self._flags
         t = a & 0x01
         a >>= 1
         if t != 0x00:
-            f.cy = True
+            self._flags.cy = True
             a |= 0x80
         else:
-            f.cy = False
+            self._flags.cy = False
         self._a = a
         return 1
 
     def _RLC(self, op):
         a = self._a
-        f = self._flags
         t = a & 0x80
         a = (a << 1) & 0xff
         if t != 0x00:
-            f.cy = True
+            self._flags.cy = True
             a |= 0x01
         else:
-            f.cy = False
+            self._flags.cy = False
         self._a = a
         return 1
         
