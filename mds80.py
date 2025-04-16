@@ -69,8 +69,12 @@ class MDS_PaperTape(object):
         self._rd_buf = 0x00
         self._status_reg = 0x40
         self._lock = Lock()
+        self._rd_queue = PQueue(1)
+        self._wr_queue = PQueue(1)
         self._changer = DiskChanger(port)
         Thread(target = self._chg_wait).start()
+        Thread(target = self._wr_wait).start()
+        Thread(target = self._rd_wait).start()
         
     def __del__(self):
         self._write_file.close()
@@ -97,29 +101,47 @@ class MDS_PaperTape(object):
                 self._lock.acquire()
                 self._status_reg &= 0xbf
                 self._lock.release()
-                Thread(target = self._wr_wait).start()
+                self._wr_queue.put(0)
+                time.sleep(0.0)
             if value & 0x04:
                 self._lock.acquire()
                 self._status_reg &= 0xdf
                 self._lock.release()
-                Thread(target = self._rd_wait).start()
+                self._rd_queue.put(0)
+                time.sleep(0.0)
 
     def _wr_wait(self):
-        self._write_file.write(chr(self._wr_buf))
-        self._write_file.flush()
-        self._lock.acquire()
-        self._status_reg |= 0x40
-        self._lock.release()
+        gf = self._wr_queue.get
+        lk = self._lock
+        while True:
+            c = gf(2.0)
+            if c is None:
+                if self._proc.halted():
+                    return
+            else:
+                self._write_file.write(chr(self._wr_buf))
+                self._write_file.flush()
+                lk.acquire()
+                self._status_reg |= 0x40
+                lk.release()
 
     def _rd_wait(self):
-        c = self._read_file.read(1)
-        if not len(c):
-            self._rd_buf = 0
-        else:
-            self._rd_buf = ord(c[0])
-        self._lock.acquire()
-        self._status_reg |= 0x20
-        self._lock.release()
+        gf = self._rd_queue.get
+        lk = self._lock
+        while True:
+            c = gf(2.0)
+            if c is None:
+                if self._proc.halted():
+                    return
+            else:
+                c = self._read_file.read(1)
+                if not len(c):
+                    self._rd_buf = 0x00
+                else:
+                    self._rd_buf = ord(c[0])
+                lk.acquire()
+                self._status_reg |= 0x20
+                lk.release()
         
     def _chg_wait(self):
         while True:
@@ -273,7 +295,7 @@ class MDS_InterruptControl(object):
         m = 0x01
         mask = (~self._mask) & 0xff
         for level in self._rng8:
-            if ((mask & self._req & m) != 0) and (not self._latch):
+            if ((mask & self._req & m) != 0x00) and (not self._latch):
                 self._req &= (~m)
                 self._latch = True
                 self._level = level
