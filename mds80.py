@@ -60,7 +60,10 @@ FPAN_IO     = 0xff
 
 
 class MDS_PaperTape(object):
-
+    """
+    MDS800 paper tape reader and writer
+    """
+    
     def __init__(self, port, proc, readFile, writeFile):
         self._proc = proc
         self._write_file = open(writeFile, 'wt')
@@ -102,13 +105,13 @@ class MDS_PaperTape(object):
                 self._status_reg &= 0xbf
                 self._lock.release()
                 self._wr_queue.put(0)
-                time.sleep(0.0)
+                time.sleep(0)
             if value & 0x04:
                 self._lock.acquire()
                 self._status_reg &= 0xdf
                 self._lock.release()
                 self._rd_queue.put(0)
-                time.sleep(0.0)
+                time.sleep(0)
 
     def _wr_wait(self):
         gf = self._wr_queue.get
@@ -167,7 +170,10 @@ class MDS_Tty(i8251):
 
 
 class MDS_FloppyController(object):
-
+    """
+    MDS800 floppy disk controller device
+    """
+    
     def __init__(self, memAs, dsk0, dsk1, proc):
         self._write_buf = bytearray(128)
         self._mem = memAs
@@ -203,7 +209,7 @@ class MDS_FloppyController(object):
             self._save_lo = value
         elif addr == 2:
             self._queue.put((value << 8) + self._save_lo)
-            time.sleep(0.0)            
+            time.sleep(0)            
 
     def _dma_xfer(self):
         mr = self._mem.read8
@@ -250,7 +256,10 @@ class MDS_FloppyController(object):
 
 
 class MDS_InterruptControl(object):
-
+    """
+    MDS800 interrupt controller device
+    """
+    
     def __init__(self, proc):
         self._proc = proc
         self._latch = False
@@ -304,10 +313,12 @@ class MDS_InterruptControl(object):
             m <<= 1
             
     def _service(self):
+        gf = self._q.get
+        rf = self._proc.intr_req
         while True:
-            level = self._q.get(2.0)
+            level = gf(2.0)
             if level is not None:
-                self._proc.intr_req(0xc7 | (level << 3))
+                rf(0xc7 | (level << 3))
             else:
                 if self._proc.halted():
                     return
