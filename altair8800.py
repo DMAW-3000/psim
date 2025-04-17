@@ -56,7 +56,7 @@ class Altair_FrontPanel(object):
         print("FP write %02x" % value)
 
 
-class System(object):
+class Altair_System(object):
 
     def __init__(self, args):
     
@@ -107,6 +107,7 @@ class System(object):
         ram.write8(2, MON_ROM_ADDR >> 8)
         
     def run(self):
+        self.proc.reset()
         self.proc.run()
     
 
@@ -115,7 +116,7 @@ if __name__ == '__main__':
     from application import AppParser
        
     args = AppParser().parse()
-    system = System(args).run()
+    system = Altair_System(args).run()
     
     
 

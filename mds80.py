@@ -426,6 +426,7 @@ class MDS_System(object):
         self._io.add(TIMER_IO, self._timer, "TIM0")
         
     def run(self):
+        self.proc.reset()
         self.proc.run()
 
     def _clkout(self):

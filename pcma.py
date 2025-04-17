@@ -269,7 +269,7 @@ class PCMA_Printer(object):
             return 0x00
             
             
-class PCMA(object):
+class PCMA_System(object):
 
     def __init__(self, args):
     
@@ -374,6 +374,7 @@ class PCMA(object):
         self._fdc.data_write(value)
         
     def run(self):
+        self.proc.reset()
         self.proc.run()
         
 
@@ -382,4 +383,4 @@ if __name__ == '__main__':
     from application import AppParser
 
     args = AppParser().parse()
-    system = PCMA(args).run()
+    system = PCMA_System(args).run()

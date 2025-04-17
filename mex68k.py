@@ -334,6 +334,7 @@ class MEX_System(object):
         self._cas.clk()
         
     def run(self):
+        self.proc.reset()
         self.proc.run()
     
 

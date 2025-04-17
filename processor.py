@@ -36,7 +36,6 @@ class Processor(object):
 
     def run(self):
         try:
-            self.reset()
             self._run_loop()
         except Exception:
             self.halt()
