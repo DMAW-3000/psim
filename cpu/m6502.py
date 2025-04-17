@@ -23,10 +23,10 @@ class m6502(Processor):
         self._addr_mask = 0xffff
         self._stack_addr = 0x0100
         
-        self._pc = 0
-        self._a = 0
-        self._x = 0
-        self._y = 0
+        self._pc = 0x0000
+        self._a = 0x00
+        self._x = 0x00
+        self._y = 0x00
         self._sp = 0xff
 
         self._op_map = [None] * 256
