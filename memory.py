@@ -314,3 +314,34 @@ class ROM(Memory):
                 offset = int(line[4:8], 16) - self._addr
                 for i in range(n):
                     self._m[offset+i] = int(line[8+(i*2):10+(i*2)], 16)
+                    
+
+class DROM(Memory):
+    """
+    ROM memory loadable with a data sequence
+    """
+    
+    def __init__(self, size, dataSeq):
+        Memory.__init__(self, size)
+        offset = 0
+        for d in dataSeq:
+            self._m[offset] = d
+            offset += 1
+
+    def write8(self, address, value):
+        """
+        Write operations do nothing
+        """
+        pass
+
+    def write16le(self, address, value):
+        """
+        Write operations do nothing
+        """
+        pass
+        
+    def write16be(self, address, value):
+        """
+        Write operations do nothing
+        """
+        pass

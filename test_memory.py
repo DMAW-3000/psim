@@ -79,11 +79,42 @@ class Test_ROM(unittest.TestCase):
         self.assertEqual(self._as.read8(0xff03), 0x7F)
         self.assertEqual(self._as.read8(0xff1e), 0xff)
         self.assertEqual(self._as.read8(0xff1f), 0xa9)
+        self.assertEqual(self._as.read16le(0xff04), 0x128c)
         
     def test_write(self):
         self._as.write8(0xff00, 0x00)
         self.assertEqual(self._rom._m[0], 0xd8)
+        self._as.write16le(0xff04, 0x0000)
+        self.assertEqual(self._rom._m[4], 0x8c)
+        self.assertEqual(self._rom._m[5], 0x12)
+        self._as.write16be(0xff04, 0x0000)
+        self.assertEqual(self._rom._m[4], 0x8c)
+        self.assertEqual(self._rom._m[5], 0x12)
         
+        
+class Test_DROM(unittest.TestCase):
+
+    def setUp(self):
+        self._as = AddressSpace()
+        romData = (0xa3, 0xf5, 0x01, 0x3d)
+        self._rom = DROM(8, romData)
+        self._as.add(0x0000, self._rom, "TROM")
+        
+    def test_read(self):
+        self.assertEqual(self._as.read8(0), 0xa3)
+        self.assertEqual(self._as.read8(1), 0xf5)
+        self.assertEqual(self._as.read8(2), 0x01)
+        self.assertEqual(self._as.read8(3), 0x3d)
+        
+    def test_write(self):
+        self._as.write8(0, 0x50)
+        self.assertEqual(self._rom._m[0], 0xa3)
+        self._as.write16le(0, 0x5321)
+        self.assertEqual(self._rom._m[0], 0xa3)
+        self.assertEqual(self._rom._m[1], 0xf5)
+        self._as.write16be(4, 0x5321)
+        self.assertEqual(self._rom._m[4], 0x00)
+        self.assertEqual(self._rom._m[5], 0x00)
         
 if __name__ == '__main__':
 

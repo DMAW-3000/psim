@@ -11,7 +11,8 @@ class Test_m6502(unittest.TestCase):
         self._mem = AddressSpace()
         self._ram = RAM(32)
         self._mem.add(0x0000, self._ram, "TRAM")
-        self._rom = ROM(4)
+        romData = (0x0000, 0x0000)
+        self._rom = DROM(4, romData)
         self._mem.add(0xfffc, self._rom, "TROM")
         self._proc = m6502(self._mem)
         
@@ -42,14 +43,15 @@ class Test_m6502(unittest.TestCase):
         
     def test_reset(self):
         self._proc.reset()
-        self.assertEqual(self._proc._pc, 0x1000)
+        self.assertEqual(self._proc._pc, 0x0000)
+        self.assertEqual(self._proc._sp, 0xfd)
         
     def test_nop(self):
         self.clear()
         self._ram._m[0] = 0xea
         self._proc._step()
         self.assertEqual(self._proc._a, 0x00)
-        self.assertEqual(self._proc._pc, 0x1001)
+        self.assertEqual(self._proc._pc, 0x0001)
     
        
 if __name__ == '__main__':
