@@ -27,7 +27,7 @@ class m6502(Processor):
         self._a = 0x00
         self._x = 0x00
         self._y = 0x00
-        self._sp = 0xff
+        self._sp = 0x00
 
         self._op_map = [None] * 256
         m = self._op_map
@@ -144,7 +144,10 @@ class m6502(Processor):
         m[0xf0] = self._BEQ
         
     def _reset(self):
-        self._pc = 0x1000
+        mr = self._mem_read
+        self._pc = (mr(0xfffc) << 8) + mr(0xfffd)
+        self._sp = 0xfd
+        self._flags.i = True
 
     def _step(self):
         pc = self._pc
