@@ -10,7 +10,9 @@ class Test_m6502(unittest.TestCase):
     def setUp(self):
         self._mem = AddressSpace()
         self._ram = RAM(32)
-        self._mem.add(0x1000, self._ram, "TRAM")
+        self._mem.add(0x0000, self._ram, "TRAM")
+        self._rom = ROM(4)
+        self._mem.add(0xfffc, self._rom, "TROM")
         self._proc = m6502(self._mem)
         
     def clear(self):

@@ -1,5 +1,6 @@
 
 from memory import *
+import io
 
 import unittest
 
@@ -59,6 +60,29 @@ class Test_RAM(unittest.TestCase):
         self.assertEqual(self._ram._m[1], 0x6d)
         self.assertEqual(self._ram._m[2], 0x94)
         self.assertEqual(self._ram._m[3], 0x02)
+        
+
+class Test_ROM(unittest.TestCase):
+
+    def setUp(self):
+        hexStr = "S113FF00D858A07F8C12D0A9A78D11D08D13D0C939\nS113FF10DFF013C99BF003C8100FA95C20EFFFA901"
+        hexFile = io.StringIO(hexStr)
+        self._as = AddressSpace()
+        self._rom = ROM(32, None, 0xff00, False)
+        self._rom._loadSREC(hexFile)
+        self._as.add(0xff00, self._rom, "TROM")
+        
+    def test_read(self):
+        self.assertEqual(self._as.read8(0xff00), 0xd8)
+        self.assertEqual(self._as.read8(0xff01), 0x58)
+        self.assertEqual(self._as.read8(0xff02), 0xA0)
+        self.assertEqual(self._as.read8(0xff03), 0x7F)
+        self.assertEqual(self._as.read8(0xff1e), 0xff)
+        self.assertEqual(self._as.read8(0xff1f), 0xa9)
+        
+    def test_write(self):
+        self._as.write8(0xff00, 0x00)
+        self.assertEqual(self._rom._m[0], 0xd8)
         
         
 if __name__ == '__main__':

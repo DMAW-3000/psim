@@ -272,9 +272,11 @@ class ROM(Memory):
     ROM memory loadable with a hex file
     """
     
-    def __init__(self, size, hexFile, addr):
+    def __init__(self, size, hexFile, addr, autoLoad = True):
         Memory.__init__(self, size)
-        self._load(hexFile, addr)
+        self._addr = addr
+        if autoLoad:
+            self._load(hexFile)
 
     def write8(self, address, value):
         """
@@ -294,16 +296,21 @@ class ROM(Memory):
         """
         pass
 
-    def _load(self, hexFile, addr):
+    def _load(self, hexFile):
         """
         Load a hex file into ROM
         """
         f = open(hexFile, 'rt')
+        self._loadSREC(f)
+        f.close()
+        
+    def _loadSREC(self, f):
+        """
+        Load Motorolla SREC hex file
+        """
         for line in f:
             if line.startswith('S1'):
                 n = int(line[2:4], 16) - 3
-                offset = int(line[4:8], 16) - addr
+                offset = int(line[4:8], 16) - self._addr
                 for i in range(n):
                     self._m[offset+i] = int(line[8+(i*2):10+(i*2)], 16)
-        f.close()
-        
