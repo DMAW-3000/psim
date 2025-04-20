@@ -145,7 +145,7 @@ class m6502(Processor):
         
     def _reset(self):
         mr = self._mem_read
-        self._pc = (mr(0xfffc) << 8) + mr(0xfffd)
+        self._pc = mr(0xfffc) + (mr(0xfffd) << 8)
         self._sp = 0xfd
         self._flags.i = True
 
