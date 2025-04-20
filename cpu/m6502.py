@@ -62,6 +62,7 @@ class m6502(Processor):
         #self._op_map[0xbc] = self._LDY
 
         m[0x84] = self._STYzp
+        m[0x8c] = self._STYabs
 
         m[0x69] = self._ADCimm
         m[0x65] = self._ADCzp
@@ -126,6 +127,7 @@ class m6502(Processor):
         m[0x30] = self._BMI
         m[0x38] = self._SEC
         m[0x48] = self._PHA
+        m[0x58] = self._CLI
         m[0x60] = self._RTS
         m[0x68] = self._PLA
         m[0x88] = self._DEY
@@ -135,8 +137,10 @@ class m6502(Processor):
         m[0x98] = self._TYA
         m[0x9a] = self._TXS
         m[0xa8] = self._TAY
+        m[0xaa] = self._TAX
         m[0xb0] = self._BCS
         m[0xba] = self._TSX
+        m[0xc8] = self._INY
         m[0xca] = self._DEX
         m[0xd0] = self._BNE
         m[0xd8] = self._CLD
@@ -235,9 +239,8 @@ class m6502(Processor):
         return 2
 
     def _STAabs(self, pc):
-        a0 = self._mem_read(pc + 1)
-        a1 = self._mem_read(pc + 2)
-        self._mem_write((a1 << 8) + a0, self._a)
+        mr = self._mem_read
+        self._mem_write(mr(pc + 1) + (mr(pc + 2) << 8), self._a)
         return 3
 
     def _LDXimm(self, pc):
@@ -247,7 +250,8 @@ class m6502(Processor):
         return 2
 
     def _LDXzp(self, pc):
-        t = self._mem_read(self._mem_read(pc + 1))
+        mr = self._mem_read
+        t = mr(mr(pc + 1))
         self._x = t
         self._set_flags(t)
         return 2
@@ -259,7 +263,8 @@ class m6502(Processor):
         return 2
 
     def _LDYzp(self, pc):
-        t = self._mem_read(self._mem_read(pc + 1))
+        mr = self._mem_read
+        t = mr(mr(pc + 1))
         self._y = t
         self._set_flags(t)
         return 2
@@ -267,6 +272,11 @@ class m6502(Processor):
     def _STYzp(self, pc):
         self._mem_write(self._mem_read(pc + 1), self._y)
         return 2
+        
+    def _STYabs(self, pc):
+        mr = self._mem_read
+        self._mem_write(mr(pc + 1) + (mr(pc + 2) << 8), self._y)
+        return 3
 
     def _ADCimm(self, pc): 
         t = self._a + self._mem_read(pc + 1) + int(self._flags.c)
@@ -435,43 +445,64 @@ class m6502(Processor):
     def _CLC(self, pc):
         self._flags.c = False
         return 1
+        
+    def _CLI(self, pc):
+        self._flags.i = False
+        return 1
 
     def _NOP(self, pc):
         return 1
 
     def _TXA(self, pc):
-        self._a = self._x
-        self._set_flags(self._a)
+        t = self._x
+        self._a = t
+        self._set_flags(t)
         return 1
 
     def _TXS(self, pc):
         self._sp = self._x
-        self._set_flags(self._sp)
         return 1
 
     def _TSX(self, pc):
-        self._x = self._sp
-        self._set_flags(self._x)
+        t = self._sp
+        self._x = t
+        self._set_flags(t)
         return 1
 
     def _TYA(self, pc):
-        self._a = self._y
-        self._set_flags(self._a)
+        t = self._y
+        self._a = t
+        self._set_flags(t)
+        return 1
+
+    def _TAX(self, pc):
+        t = self._a
+        self._x = t
+        self._set_flags(t)
         return 1
 
     def _TAY(self, pc):
-        self._y = self._a
-        self._set_flags(self._y)
+        t = self._a
+        self._y = t
+        self._set_flags(t)
+        return 1
+        
+    def _INY(self, pc):
+        t = (self._y + 1) & 0xff
+        self._y = t
+        self._set_flags(t)
         return 1
 
     def _DEX(self, pc):
-        self._x = (self._x - 1) & 0xff
-        self._set_flags(self._x)
+        t = (self._x - 1) & 0xff
+        self._x = t
+        self._set_flags(t)
         return 1
 
     def _DEY(self, pc):
-        self._y = (self._y - 1) & 0xff
-        self._set_flags(self._y)
+        t = (self._y - 1) & 0xff
+        self._y = t
+        self._set_flags(t)
         return 1
 
     def _JSR(self, pc):
@@ -569,7 +600,7 @@ class m6502(Processor):
         print("A=%02x X=%02x Y=%02x" % \
               (self._a, self._x, self._y))
         print("PC=%04x SP=%02x" % (self._pc, self._sp))
-        print("N=%d V=%d B=%d I=%d Z=%d C=%d" % \
+        print("N=%d V=%d D=%d I=%d Z=%d C=%d" % \
               (self._flags.n, self._flags.v, self._flags.d,
                self._flags.i, self._flags.z, self._flags.c))
         #print("%02x %02x %02x %02x %02x" % \
