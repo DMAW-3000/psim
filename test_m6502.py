@@ -57,6 +57,7 @@ class Test_m6502(unittest.TestCase):
     def test_cli(self):
         self.clear()
         self._ram._m[0] = 0x58
+        self._proc._flags.i = True
         self._proc._step()
         self.assertFalse(self._proc._flags.i)
         self.assertEqual(self._proc._pc, 0x0001)
@@ -64,6 +65,7 @@ class Test_m6502(unittest.TestCase):
     def test_cld(self):
         self.clear()
         self._ram._m[0] = 0xd8
+        self._proc._flags.d = True
         self._proc._step()
         self.assertFalse(self._proc._flags.d)
         self.assertEqual(self._proc._pc, 0x0001)
@@ -71,8 +73,23 @@ class Test_m6502(unittest.TestCase):
     def test_clc(self):
         self.clear()
         self._ram._m[0] = 0x18
+        self._proc._flags.c = True
         self._proc._step()
         self.assertFalse(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0001)
+        
+    def test_sec(self):
+        self.clear()
+        self._ram._m[0] = 0x38      # SEC
+        self._proc._step()
+        self.assertTrue(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0001)
+        
+    def test_sed(self):
+        self.clear()
+        self._ram._m[0] = 0xf8      # SED
+        self._proc._step()
+        self.assertTrue(self._proc._flags.d)
         self.assertEqual(self._proc._pc, 0x0001)
         
     def test_ldy(self):
@@ -247,6 +264,118 @@ class Test_m6502(unittest.TestCase):
         self.assertFalse(self._proc._flags.z)
         self.assertTrue(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x0001)
+        
+    def test_bmi(self):
+        self.clear()
+        self._ram._m[0] = 0x30      # BMI $06
+        self._ram._m[1] = 0x06  
+        self._ram._m[8] = 0x30      # BMI $06
+        self._ram._m[9] = 0x06     
+        self._proc._flags.n = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.n = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000a)
+        
+    def test_bpl(self):
+        self.clear()
+        self._ram._m[0] = 0x10      # BPL $06
+        self._ram._m[1] = 0x06  
+        self._ram._m[8] = 0x10      # BPL $06
+        self._ram._m[9] = 0x06     
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.n = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000a)
+        
+    def test_beq(self):
+        self.clear()
+        self._ram._m[0] = 0xf0      # BEQ $06
+        self._ram._m[1] = 0x06  
+        self._ram._m[8] = 0xf0      # BEQ $06
+        self._ram._m[9] = 0x06     
+        self._proc._flags.z = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.z = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000a)
+        
+    def test_bne(self):
+        self.clear()
+        self._ram._m[0] = 0xd0      # BNE $06
+        self._ram._m[1] = 0x06  
+        self._ram._m[8] = 0xd0      # BNE $06
+        self._ram._m[9] = 0x06     
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.z = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000a)
+        
+    def test_bcs(self):
+        self.clear()
+        self._ram._m[0] = 0xb0      # BCS $06
+        self._ram._m[1] = 0x06  
+        self._ram._m[8] = 0xb0      # BCS $06
+        self._ram._m[9] = 0x06
+        self._proc._flags.c = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.c = False
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000a)
+        
+    def test_bcc(self):
+        self.clear()
+        self._ram._m[0] = 0x90      # BCC $06
+        self._ram._m[1] = 0x06  
+        self._ram._m[8] = 0x90      # BCC $06
+        self._ram._m[9] = 0x06     
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.c = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000a)
+        
+    def test_jmp(self):
+        self.clear()
+        self._ram._m[0] = 0x4c      # JMP $0102
+        self._ram._m[1] = 0x02
+        self._ram._m[2] = 0x01
+        self._ram._m[258] = 0xea    # NOP
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0102)
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0103)
+        
+    def test_jsr(self):
+        self.clear()
+        self._ram._m[0] = 0x20      # JSR $0010
+        self._ram._m[1] = 0x10
+        self._ram._m[2] = 0x00
+        self._ram._m[16] = 0xea     # NOP
+        self._proc._sp = 0xff
+        self._proc._step()
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0011)
+        self.assertEqual(self._proc._sp, 0xfd)
+        self.assertEqual(self._ram._m[511], 0x00)
+        self.assertEqual(self._ram._m[510], 0x02)
+        
+    def test_rts(self):
+        self.clear()
+        self._ram._m[0] = 0x60      # RTS
+        self._ram._m[511] = 0x00
+        self._ram._m[510] = 0x0f
+        self._ram._m[16] = 0xea     # NOP
+        self._proc._sp = 0xfd
+        self._proc._step()
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0011)
+        self.assertEqual(self._proc._sp, 0xff)
         
         
 if __name__ == '__main__':

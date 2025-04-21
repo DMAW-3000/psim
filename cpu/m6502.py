@@ -122,6 +122,7 @@ class m6502(Processor):
         #self._op_map[0x6c] = self._JMP
 
         m[0x00] = self._BRK
+        m[0x10] = self._BPL
         m[0x18] = self._CLC
         m[0x20] = self._JSR
         m[0x30] = self._BMI
@@ -146,6 +147,7 @@ class m6502(Processor):
         m[0xd8] = self._CLD
         m[0xea] = self._NOP
         m[0xf0] = self._BEQ
+        m[0xf8] = self._SED
         
     def _reset(self):
         mr = self._mem_read
@@ -433,13 +435,17 @@ class m6502(Processor):
     def _SEI(self, pc):
         self._flags.i = True
         return 1
+        
+    def _SEC(self, pc):
+        self._flags.c = True
+        return 1
+        
+    def _SED(self, pc):
+        self._flags.d = True
+        return 1
 
     def _CLD(self, pc):
         self._flags.d = False
-        return 1
-
-    def _SEC(self, pc):
-        self._flags.c = True
         return 1
 
     def _CLC(self, pc):
@@ -506,24 +512,25 @@ class m6502(Processor):
         return 1
 
     def _JSR(self, pc):
+        sw = self._stack_write
+        mr = self._mem_read
         ra = (pc + 2) & 0xffff
-        self._stack_write( 0, ra >> 8)
-        self._stack_write(-1, ra & 0xff)
+        sw(-1, ra & 0xff)
+        sw( 0, ra >> 8)
         self._sp = (self._sp - 2) & 0xff
-        a0 = self._mem_read(pc + 1) 
-        self._pc = (self._mem_read(pc + 2) << 8) + a0
+        self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
         return 0
 
     def _RTS(self, pc):
-        ra = self._stack_read(1)
-        ra += (self._stack_read(2) << 8)
+        sr = self._stack_read
+        ra = sr(1) + (sr(2) << 8)
         self._sp = (self._sp + 2) & 0xff
         self._pc = (ra + 1) & 0xffff
         return 0
 
     def _JMPabs(self, pc):
-        a0 = self._mem_read(pc + 1)
-        self._pc = ((self._mem_read(pc + 2) << 8) + a0) & 0xffff
+        mr = self._mem_read
+        self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
         return 0    
 
     def _PHA(self, pc):
@@ -562,6 +569,12 @@ class m6502(Processor):
 
     def _BMI(self, pc):
         if self._flags.n:
+            return self._br_offset(pc)
+        else:
+            return 2
+            
+    def _BPL(self, pc):
+        if not self._flags.n:
             return self._br_offset(pc)
         else:
             return 2
