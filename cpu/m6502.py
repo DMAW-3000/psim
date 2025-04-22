@@ -366,21 +366,20 @@ class m6502(Processor):
         return 2
 
     def _BITzp(self, pc):
-        a0 = self._mem_read(pc + 1)
-        t = self._a ^ self._mem_read(a0)
+        mr = self._mem_read
+        t = self._a ^ mr(mr(pc + 1))
         f = self._flags
-        f.n = ((t & 0x80) != 0)
-        f.v = ((t & 0x40) != 0)
+        f.n = ((t & 0x80) != 0x00)
+        f.v = ((t & 0x40) != 0x00)
         f.z = (t == 0x00)
         return 2
 
     def _BITabs(self, pc):
-        a0 = self._mem_read(pc + 1)
-        a1 = self._mem_read(pc + 2)
-        t = self._a ^ self._mem_read((a1 << 8) + a0)
+        mr = self._mem_read
+        t = self._a ^ mr(mr(pc + 1) + (mr(pc + 2) << 8))
         f = self._flags
-        f.n = ((t & 0x80) != 0)
-        f.v = ((t & 0x40) != 0)
+        f.n = ((t & 0x80) != 0x00)
+        f.v = ((t & 0x40) != 0x00)
         f.z = (t == 0)
         return 3
 
@@ -393,8 +392,9 @@ class m6502(Processor):
         return 1
 
     def _ASLzp(self, pc):
-        a = self._mem_read(pc + 1)
-        x0 = self._mem_read(a)
+        mr = self._mem_read
+        a = mr(pc + 1)
+        x0 = mr(a)
         self._flags.c = ((x0 & 0x80) != 0x00)
         x0 = (x0 << 1) & 0xff
         self._mem_write(a, x0)
@@ -421,8 +421,9 @@ class m6502(Processor):
 
     def _RORzp(self, pc):
         f = self._flags
-        a0 = self._mem_read(pc + 1)
-        x0 = self._mem_read(a0)
+        mr = self._mem_read
+        a = mr(pc + 1)
+        x0 = mr(a)
         t = (x0 & 0x01)
         x0 >>= 1
         if f.c:
