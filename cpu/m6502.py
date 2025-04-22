@@ -167,10 +167,7 @@ class m6502(Processor):
         self._pc = (self._pc + pci) & 0xffff
 
     def _check_break(self, blist):
-        if self._pc in blist:
-            return True
-        else:
-            return False
+        return self._pc in blist
             
     def _enable_log(self):
         self._mem.enable_trc()
@@ -203,22 +200,22 @@ class m6502(Processor):
         return 2
 
     def _LDAzp(self, pc): 
-        t = self._mem_read(self._mem_read(pc + 1))
+        mr = self._mem_read
+        t = mr(mr(pc + 1))
         self._a = t
         self._set_flags(t)
         return 2
 
     def _LDAzpx(self, pc):
-        a0 = (self._mem_read(pc + 1) + self._x) & 0xff
-        t = self._mem_read(a0)
+        mr = self._mem_read
+        t = mr((mr(pc + 1) + self._x) & 0xff)
         self._a = t
         self._set_flags(t)
         return 2
 
     def _LDAabs(self, pc):
-        a0 = self._mem_read(pc + 1)
-        a1 = self._mem_read(pc + 2)
-        t = self._mem_read((a1 << 8) + a0)
+        mr = self._mem_read
+        t = mr(mr(pc + 1) + (mr(pc + 2) << 8))
         self._a = t
         self._set_flags(t)
         return 3
@@ -289,8 +286,8 @@ class m6502(Processor):
         return 2
 
     def _ADCzp(self, pc):
-        a0 = self._mem_read(pc + 1)
-        t = self._a + self._mem_read(a0) + int(self._flags.c)
+        mr = self._mem_read
+        t = self._a + mr(mr(pc + 1)) + int(self._flags.c)
         self._flags.c = (t > 255)
         t &= 0xff
         self._a = t
@@ -314,14 +311,15 @@ class m6502(Processor):
         return 2
 
     def _CMPzp(self, pc):
-        t = self._a - self._mem_read(self._mem_read(pc + 1))
+        mr = self._mem_read
+        t = self._a - mr(mr(pc + 1))
         self._flags.c = (t >= 0)
         self._set_flags(t & 0xff)
         return 2
 
     def _CMPzpx(self, pc):
-        a0 = (self._mem_read(pc + 1) + self._x) & 0xff
-        t = self._a - self._mem_read(a0)
+        mr = self._mem_read
+        t = self._a - mr((mr(pc + 1) + self._x) & 0xff)
         self._flags.c = (t >= 0)
         self._set_flags(t & 0xff)
         return 2
@@ -333,15 +331,17 @@ class m6502(Processor):
         return 2
 
     def _INCzp(self, pc):
-        a = self._mem_read(pc + 1)
-        x0 = (self._mem_read(a) + 1) & 0xff
+        mr = self._mem_read
+        a = mr(pc + 1)
+        x0 = (mr(a) + 1) & 0xff
         self._mem_write(a, x0)
         self._set_flags(x0)
         return 2
 
     def _DECzp(self, pc):
-        a = self._mem_read(pc + 1)
-        x0 = (self._mem_read(a) - 1) & 0xff
+        mr = self._mem_read
+        a = mr(pc + 1)
+        x0 = (mr(a) - 1) & 0xff
         self._mem_write(a, x0)
         self._set_flags(x0)
         return 2
@@ -359,8 +359,8 @@ class m6502(Processor):
         return 2
 
     def _ORAzp(self, pc):
-        a0 = self._mem_read(pc + 1)
-        t = self._a | self._mem_read(a0)
+        mr = self._mem_read
+        t = self._a | mr(mr(pc + 1))
         self._a = t
         self._set_flags(t)
         return 2
@@ -515,8 +515,8 @@ class m6502(Processor):
         sw = self._stack_write
         mr = self._mem_read
         ra = (pc + 2) & 0xffff
-        sw(-1, ra & 0xff)
         sw( 0, ra >> 8)
+        sw(-1, ra & 0xff)
         self._sp = (self._sp - 2) & 0xff
         self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
         return 0
@@ -590,24 +590,6 @@ class m6502(Processor):
         f = self._flags
         f.z = (value == 0x00)
         f.n = (value & 0x80) != 0x00
-
-    def _check_flags(self, code):
-        if code == 0:
-            return not self._flags.z
-        elif code == 1:
-            return self._flags.z
-        elif code == 2:
-            return not self._flags.cy
-        elif code == 3:
-            return self._flags.cy
-        elif code == 4:
-            return not self._flags.p
-        elif code == 5:
-            return self._flags.p
-        elif code == 6:
-            return not self._flags.s
-        else:
-            return self._flags.s
 
     def _print_state(self):
         print("A=%02x X=%02x Y=%02x" % \
