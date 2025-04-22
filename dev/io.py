@@ -1,6 +1,10 @@
 
-class i8255(object):
 
+class i8255(object):
+    """
+    Intel 8255 PIO device
+    """
+    
     def __init__(self, portIn = None, portOut = None):
         self._port_in = portIn
         self._port_out = portOut
@@ -49,3 +53,63 @@ class i8255(object):
                 self._port_read[1] = (value & 0x02) != 0x00
                 self._port_read[2] = (value & 0x01) != 0x00
                 self._port_read[3] = (value & 0x08) != 0x00
+                
+                
+                
+class mc6820(object):
+    """
+    Motoralla 6820 PIA device
+    """
+    
+    def __init__(self, portIn = None, portOut = None):
+        self._port_in = portIn
+        self._port_out = portOut
+        self._cntl_reg_a = 0x00
+        self._cntl_reg_b = 0x00
+        self._dir_reg_a = 0x00
+        self._dir_reg_b = 0x00
+        
+    def size(self):
+        return 4
+        
+    def read8(self, addr):
+        print("mc6820 rd %04x" % addr)
+        if addr == 0:
+            if self._cntl_reg_a & 0x04:
+                if self._port_in is not None:
+                    return self._port_in(0)
+                else:
+                    return 0xff
+            else:
+                return self._dir_reg_a
+        elif addr == 1:
+            return self._cntl_reg_a
+        elif addr == 2:
+            if self._cntl_reg_b & 0x04:
+                if self._port_in is not None:
+                    return self._port_in(1)
+                else:
+                    return 0xff
+            else:
+                return self._dir_reg_b
+        else:
+            return self._cntl_reg_b
+        
+    def write8(self, addr, value):
+        print("mc6820 wr %04x %02x" % (addr, value))
+        if addr == 0:
+            if self._cntl_reg_a & 0x04:
+                if self._port_out is not None:
+                    self._port_out(0, value)
+            else:
+                self._dir_reg_a = value
+        elif addr == 1:
+            self._cntl_reg_a = value & 0x3f
+        elif addr == 2:
+            if self._cntl_reg_b & 0x04:
+                if self._port_out is not None:
+                    self._port_out(1, value)
+            else:
+                self._dir_reg_b = value
+        else:
+            self._cntl_reg_b = value & 0x3f
