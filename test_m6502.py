@@ -476,6 +476,68 @@ class Test_m6502(unittest.TestCase):
         self.assertEqual(self._proc._a, 0x7d)
         self.assertEqual(self._proc._pc, 0x0004)
         
+    def test_bit(self):
+        self.clear()
+        self._ram._m[0] = 0x24      # BIT $20
+        self._ram._m[1] = 0x20
+        self._ram._m[2] = 0x2c      # BIT $0105
+        self._ram._m[3] = 0x05
+        self._ram._m[4] = 0x01
+        self._ram._m[32] = 0x80
+        self._ram._m[261] = 0x40
+        self._proc._step()
+        self.assertTrue(self._proc._flags.n)
+        self.assertFalse(self._proc._flags.v)
+        self.assertFalse(self._proc._flags.z)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.n)
+        self.assertTrue(self._proc._flags.v)
+        self.assertFalse(self._proc._flags.z)
+        self.assertEqual(self._proc._pc, 0x0005)
+        
+    def test_asl(self):
+        self.clear()
+        self._ram._m[0] = 0x0a      # ASL A
+        self._ram._m[1] = 0x06      # ASL $20
+        self._ram._m[2] = 0x20
+        self._ram._m[32] = 0x42
+        self._proc._a = 0x81
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x02)
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.c)
+        self._proc._step()
+        self.assertEqual(self._ram._m[32], 0x84)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0003)
+        
+    def test_lsr(self):
+        self.clear()
+        self._ram._m[0] = 0x4a      # LSR A
+        self._proc._a = 0x81
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x40)
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0001)
+        
+    def test_ror(self):
+        self.clear()
+        self._ram._m[0] = 0x6a      # ROR A
+        self._ram._m[1] = 0x66      # ROR $20
+        self._ram._m[2] = 0x20
+        self._ram._m[32] = 0x42
+        self._proc._a = 0x81
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x40)
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.c)
+        self._proc._step()
+        self.assertEqual(self._ram._m[32], 0xa1)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.c)
+        
     def test_inc(self):
         self.clear()
         self._ram._m[0] = 0xe6      # INC $20
