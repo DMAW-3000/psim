@@ -14,6 +14,10 @@ class m6502(Processor):
             self.z = False
             self.c = False
             
+        def set_flags(self, value):
+            self.z = (value == 0x00)
+            self.n = (value & 0x80) != 0x00
+            
 
     def __init__(self, memAs, clkMod = 3, clkOut = None):
         Processor.__init__(self, clkMod, clkOut)
@@ -196,28 +200,28 @@ class m6502(Processor):
     def _LDAimm(self, pc):
         t = self._mem_read(pc + 1)
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _LDAzp(self, pc): 
         mr = self._mem_read
         t = mr(mr(pc + 1))
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _LDAzpx(self, pc):
         mr = self._mem_read
         t = mr((mr(pc + 1) + self._x) & 0xff)
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _LDAabs(self, pc):
         mr = self._mem_read
         t = mr(mr(pc + 1) + (mr(pc + 2) << 8))
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 3
 
     def _LDAabsy(self, pc):
@@ -225,7 +229,7 @@ class m6502(Processor):
         a += (self._mem_read(pc + 2) << 8)
         t = self._mem_read((a + self._y) & 0xffff)
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 3
 
     def _STAzp(self, pc):
@@ -245,27 +249,27 @@ class m6502(Processor):
     def _LDXimm(self, pc):
         t = self._mem_read(pc + 1)
         self._x = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _LDXzp(self, pc):
         mr = self._mem_read
         t = mr(mr(pc + 1))
         self._x = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _LDYimm(self, pc):
         t = self._mem_read(pc + 1)
         self._y = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _LDYzp(self, pc):
         mr = self._mem_read
         t = mr(mr(pc + 1))
         self._y = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _STYzp(self, pc):
@@ -277,57 +281,64 @@ class m6502(Processor):
         self._mem_write(mr(pc + 1) + (mr(pc + 2) << 8), self._y)
         return 3
 
-    def _ADCimm(self, pc): 
-        t = self._a + self._mem_read(pc + 1) + int(self._flags.c)
-        self._flags.c = (t > 255)
+    def _ADCimm(self, pc):
+        f = self._flags
+        t = self._a + self._mem_read(pc + 1) + int(f.c)
+        f.c = (t > 255)
         t &= 0xff
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 2
 
     def _ADCzp(self, pc):
+        f = self._flags
         mr = self._mem_read
-        t = self._a + mr(mr(pc + 1)) + int(self._flags.c)
-        self._flags.c = (t > 255)
+        t = self._a + mr(mr(pc + 1)) + int(f.c)
+        f.c = (t > 255)
         t &= 0xff
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 2
 
     def _SBCzp(self, pc):
+        f = self._flags
         a0 = self._mem_read(pc + 1)
         t = self._a - self._mem_read(a0)
         t -= int(not self._flags.c)
-        self._flags.c = not (t < 0)
+        f.c = not (t < 0)
         t &= 0xff
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 2
 
-    def _CMPimm(self, pc): 
+    def _CMPimm(self, pc):
+        f = self._flags
         t = self._a - self._mem_read(pc + 1)
-        self._flags.c = (t >= 0)
-        self._set_flags(t & 0xff)
+        f.c = (t >= 0)
+        f.set_flags(t & 0xff)
         return 2
 
     def _CMPzp(self, pc):
+        f = self._flags
         mr = self._mem_read
         t = self._a - mr(mr(pc + 1))
-        self._flags.c = (t >= 0)
-        self._set_flags(t & 0xff)
+        f.c = (t >= 0)
+        f.set_flags(t & 0xff)
         return 2
 
     def _CMPzpx(self, pc):
+        f = self._flags
         mr = self._mem_read
         t = self._a - mr((mr(pc + 1) + self._x) & 0xff)
-        self._flags.c = (t >= 0)
-        self._set_flags(t & 0xff)
+        f.c = (t >= 0)
+        f.set_flags(t & 0xff)
         return 2
 
     def _CPYimm(self, pc):
+        f = self._flags
         t = self._y - self._mem_read(pc + 1)
-        self._flags.c = (t >= 0)
-        self._set_flags(t & 0xff)
+        f.c = (t >= 0)
+        f.set_flags(t & 0xff)
         return 2
 
     def _INCzp(self, pc):
@@ -335,7 +346,7 @@ class m6502(Processor):
         a = mr(pc + 1)
         x0 = (mr(a) + 1) & 0xff
         self._mem_write(a, x0)
-        self._set_flags(x0)
+        self._flags.set_flags(x0)
         return 2
 
     def _DECzp(self, pc):
@@ -343,26 +354,26 @@ class m6502(Processor):
         a = mr(pc + 1)
         x0 = (mr(a) - 1) & 0xff
         self._mem_write(a, x0)
-        self._set_flags(x0)
+        self._flags.set_flags(x0)
         return 2
 
     def _ANDimm(self, pc):
         t = self._a & self._mem_read(pc + 1)
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _ORAimm(self, pc):
         t = self._a | self._mem_read(pc + 1)
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _ORAzp(self, pc):
         mr = self._mem_read
         t = self._a | mr(mr(pc + 1))
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 2
 
     def _BITzp(self, pc):
@@ -384,29 +395,32 @@ class m6502(Processor):
         return 3
 
     def _ASLacc(self, pc):
+        f = self._flags
         t = self._a
-        self._flags.c = (t & 0x80)
+        f.c = (t & 0x80)
         t = (t << 1) & 0xff
         self._a = t 
-        self._set_flags(t)
+        f.set_flags(t)
         return 1
 
     def _ASLzp(self, pc):
+        f = self._flags
         mr = self._mem_read
         a = mr(pc + 1)
         x0 = mr(a)
-        self._flags.c = ((x0 & 0x80) != 0x00)
+        f.c = ((x0 & 0x80) != 0x00)
         x0 = (x0 << 1) & 0xff
         self._mem_write(a, x0)
-        self._set_flags(x0)
+        f.set_flags(x0)
         return 2
 
     def _LSRacc(self, pc):
+        f = self._flags
         t = self._a
-        self._flags.c = ((t & 0x01) != 0x00)
+        f.c = ((t & 0x01) != 0x00)
         t >>= 1
         self._a = t
-        self._set_flags(t)
+        f.set_flags(t)
         return 1
 
     def _RORacc(self, pc):
@@ -416,7 +430,7 @@ class m6502(Processor):
         if f.c:
            self._a |= 0x80
         f.c = (t != 0x00)
-        self._set_flags(self._a)
+        f.set_flags(self._a)
         return 1
 
     def _RORzp(self, pc):
@@ -430,7 +444,7 @@ class m6502(Processor):
             x0 |= 0x80
         f.c = (t != 0x00)
         self._mem_write(a, x0)
-        self._set_flags(x0)
+        f.set_flags(x0)
         return 2
         
     def _SEI(self, pc):
@@ -463,7 +477,7 @@ class m6502(Processor):
     def _TXA(self, pc):
         t = self._x
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
 
     def _TXS(self, pc):
@@ -473,43 +487,43 @@ class m6502(Processor):
     def _TSX(self, pc):
         t = self._sp
         self._x = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
 
     def _TYA(self, pc):
         t = self._y
         self._a = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
 
     def _TAX(self, pc):
         t = self._a
         self._x = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
 
     def _TAY(self, pc):
         t = self._a
         self._y = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
         
     def _INY(self, pc):
         t = (self._y + 1) & 0xff
         self._y = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
 
     def _DEX(self, pc):
         t = (self._x - 1) & 0xff
         self._x = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
 
     def _DEY(self, pc):
         t = (self._y - 1) & 0xff
         self._y = t
-        self._set_flags(t)
+        self._flags.set_flags(t)
         return 1
 
     def _JSR(self, pc):
@@ -586,11 +600,6 @@ class m6502(Processor):
             return  2 - ((-o) & 0xff)
         else:
             return o + 2
-            
-    def _set_flags(self, value):
-        f = self._flags
-        f.z = (value == 0x00)
-        f.n = (value & 0x80) != 0x00
 
     def _print_state(self):
         print("A=%02x X=%02x Y=%02x" % \
