@@ -92,6 +92,33 @@ class Test_m6502(unittest.TestCase):
         self.assertTrue(self._proc._flags.d)
         self.assertEqual(self._proc._pc, 0x0001)
         
+    def test_lda(self):
+        self.clear()
+        self._ram._m[0] = 0xa9      # LDA #$68
+        self._ram._m[1] = 0x68
+        self._ram._m[2] = 0xa5      # LDA $10
+        self._ram._m[3] = 0x10
+        self._ram._m[4] = 0xad      # LDA $0103
+        self._ram._m[5] = 0x03
+        self._ram._m[6] = 0x01
+        self._ram._m[16] = 0x71
+        self._ram._m[259] = 0xa1
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x68)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.n)
+        self.assertEqual(self._proc._pc, 0x0002)
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x71)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.n)
+        self.assertEqual(self._proc._pc, 0x0004)
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0xa1)
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.n)
+        self.assertEqual(self._proc._pc, 0x0007)
+        
     def test_ldy(self):
         self.clear()
         self._ram._m[0] = 0xa0      # LDY #$68
@@ -376,6 +403,100 @@ class Test_m6502(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x0011)
         self.assertEqual(self._proc._sp, 0xff)
+        
+    def test_adc(self):
+        self.clear()
+        self._ram._m[0] = 0x69      # ADC #$78
+        self._ram._m[1] = 0x78
+        self._ram._m[2] = 0x65      # ADC $20
+        self._ram._m[3] = 0x20
+        self._ram._m[4] = 0x69      # ADC #$C0
+        self._ram._m[5] = 0xc0
+        self._ram._m[6] = 0x65      # ADC $21
+        self._ram._m[7] = 0x21
+        self._ram._m[32] = 0x10
+        self._ram._m[33] = 0x05
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x78)
+        self.assertFalse(self._proc._flags.c)
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x88)
+        self.assertFalse(self._proc._flags.c)
+        self._proc._flags.c = True
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x49)
+        self.assertTrue(self._proc._flags.c)
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x4f)
+        self.assertFalse(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0008)
+        
+    def test_cmp(self):
+        self.clear()
+        self._ram._m[0] = 0xc9      # CMP #$05
+        self._ram._m[1] = 0x05
+        self._ram._m[2] = 0xc5      # CMP $20
+        self._ram._m[3] = 0x20
+        self._ram._m[4] = 0xd5      # CMP $20,X
+        self._ram._m[5] = 0x20
+        self._ram._m[32] = 0xf9
+        self._ram._m[33] = 0xb3
+        self._proc._a = 0xb3
+        self._proc._step()
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.c)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.c)
+        self._proc._x = 0x01
+        self._proc._step()
+        self.assertTrue(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0006)
+        
+    def test_and(self):
+        self.clear()
+        self._ram._m[0] = 0x29      # AND #$45
+        self._ram._m[1] = 0x45
+        self._proc._a = 0xff
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x45)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_ora(self):
+        self.clear()
+        self._ram._m[0] = 0x09      # ORA #$6d
+        self._ram._m[1] = 0x6d
+        self._ram._m[2] = 0x05      # ORA $20
+        self._ram._m[3] = 0x20
+        self._ram._m[32] = 0x10
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x6d)
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x7d)
+        self.assertEqual(self._proc._pc, 0x0004)
+        
+    def test_inc(self):
+        self.clear()
+        self._ram._m[0] = 0xe6      # INC $20
+        self._ram._m[1] = 0x20
+        self._ram._m[32] = 0xfe
+        self._proc._step()
+        self.assertEqual(self._ram._m[32], 0xff)
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.n)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_dec(self):
+        self.clear()
+        self._ram._m[0] = 0xc6      # DEC $20
+        self._ram._m[1] = 0x20
+        self._ram._m[32] = 0x02
+        self._proc._step()
+        self.assertEqual(self._ram._m[32], 0x01)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.n)
+        self.assertEqual(self._proc._pc, 0x0002)
         
         
 if __name__ == '__main__':
