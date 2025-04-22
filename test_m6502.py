@@ -560,6 +560,37 @@ class Test_m6502(unittest.TestCase):
         self.assertFalse(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x0002)
         
+    def test_pha(self):
+        self.clear()
+        self._ram._m[0] = 0x48      # PHA
+        self._ram._m[1] = 0x48      # PHA
+        self._proc._sp = 0xff
+        self._proc._a = 0x56
+        self._proc._step()
+        self.assertEqual(self._proc._sp, 0xfe)
+        self.assertEqual(self._ram._m[511], 0x56)
+        self._proc._a = 0x1c
+        self._proc._step()
+        self.assertEqual(self._proc._sp, 0xfd)
+        self.assertEqual(self._ram._m[510], 0x1c)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
+    def test_pla(self):
+        self.clear()
+        self._ram._m[0] = 0x68      # PLA
+        self._ram._m[1] = 0x68      # PLA
+        self._ram._m[510] = 0x56
+        self._ram._m[511] = 0x1c
+        self._proc._sp = 0xfd
+        self._proc._step()
+        self.assertEqual(self._proc._sp, 0xfe)
+        self.assertEqual(self._proc._a, 0x56)
+        self._proc._a = 0x1c
+        self._proc._step()
+        self.assertEqual(self._proc._sp, 0xff)
+        self.assertEqual(self._proc._a, 0x1c)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
         
 if __name__ == '__main__':
    
