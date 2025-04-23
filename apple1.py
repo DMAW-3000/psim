@@ -7,19 +7,40 @@ Apple 1 system.
 """
 
 from cpu.m6502 import m6502
+from dev.io import mc6820
 from memory import *
 
-
 import os
+from multiprocessing import shared_memory
 
 RAM_ADDR = 0x0000
 RAM_SIZE = 0x4000
+
+PIA_ADDR = 0xd010
 
 WOZ_ROM_ADDR = 0xff00
 WOZ_ROM_SIZE = 0x0100
 
 APP_DIR = "app_apple1"
 
+
+
+class Apple1_Display(object):
+
+    def __init__(self):
+        try:
+            self._sm = shared_memory.SharedMemory("VMEM_APPLE1")
+            self._buf = self._sm._buf
+        except FileNotFoundError:
+            self._sm = bytearray(1)
+            self._buf = self._sm
+        
+    def write(self, value):
+        print("DISPLAY: %s" % chr(value))
+        self._buf[0] = value | 0x80
+        
+    def read(self):
+        return self._buf[0]
 
 
 class Apple1_System(object):
@@ -45,6 +66,21 @@ class Apple1_System(object):
 
         rom = ROM(WOZ_ROM_SIZE, os.path.join(APP_DIR, "wozmon.hex"), WOZ_ROM_ADDR)
         self._mem.add(WOZ_ROM_ADDR, rom, "WROM")
+        
+        self._pia = mc6820(self._pia_in, self._pia_out)
+        self._mem.add(PIA_ADDR, self._pia, "MPIA")
+        
+        self._display = Apple1_Display()
+        
+    def _pia_in(self, port):
+        print("PIA in %d" % port)
+        if port == 1:
+            return self._display.read()
+        return 0xff
+        
+    def _pia_out(self, port, value):
+        if port == 1:
+            self._display.write(value)
         
     def run(self):
         self.proc.reset()

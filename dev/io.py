@@ -68,6 +68,8 @@ class mc6820(object):
         self._cntl_reg_b = 0x00
         self._dir_reg_a = 0x00
         self._dir_reg_b = 0x00
+        self._out_reg_a = 0x00
+        self._out_reg_b = 0x00
         
     def size(self):
         return 4
@@ -77,7 +79,9 @@ class mc6820(object):
         if addr == 0:
             if self._cntl_reg_a & 0x04:
                 if self._port_in is not None:
-                    return self._port_in(0)
+                    mi = (~self._dir_reg_a) & 0xff
+                    return (self._port_in(0) & mi) | \
+                           (self._out_reg_a & self._dir_reg_a)
                 else:
                     return 0xff
             else:
@@ -87,7 +91,9 @@ class mc6820(object):
         elif addr == 2:
             if self._cntl_reg_b & 0x04:
                 if self._port_in is not None:
-                    return self._port_in(1)
+                    mi = (~self._dir_reg_b) & 0xff
+                    return (self._port_in(1) & mi) | \
+                           (self._out_reg_b & self._dir_reg_b)
                 else:
                     return 0xff
             else:
@@ -100,7 +106,9 @@ class mc6820(object):
         if addr == 0:
             if self._cntl_reg_a & 0x04:
                 if self._port_out is not None:
+                    value &= self._dir_reg_a
                     self._port_out(0, value)
+                    self._out_reg_a = value
             else:
                 self._dir_reg_a = value
         elif addr == 1:
@@ -108,7 +116,9 @@ class mc6820(object):
         elif addr == 2:
             if self._cntl_reg_b & 0x04:
                 if self._port_out is not None:
+                    value &= self._dir_reg_b
                     self._port_out(1, value)
+                    self._out_reg_b = value
             else:
                 self._dir_reg_b = value
         else:
