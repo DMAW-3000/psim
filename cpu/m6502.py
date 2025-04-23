@@ -378,20 +378,20 @@ class m6502(Processor):
 
     def _BITzp(self, pc):
         mr = self._mem_read
-        t = self._a ^ mr(mr(pc + 1))
+        t = mr(mr(pc + 1))
         f = self._flags
         f.n = ((t & 0x80) != 0x00)
         f.v = ((t & 0x40) != 0x00)
-        f.z = (t == 0x00)
+        f.z = ((self._a ^ t) == 0x00)
         return 2
 
     def _BITabs(self, pc):
         mr = self._mem_read
-        t = self._a ^ mr(mr(pc + 1) + (mr(pc + 2) << 8))
+        t = mr(mr(pc + 1) + (mr(pc + 2) << 8))
         f = self._flags
         f.n = ((t & 0x80) != 0x00)
         f.v = ((t & 0x40) != 0x00)
-        f.z = (t == 0)
+        f.z = ((self._a ^ t) == 0x00)
         return 3
 
     def _ASLacc(self, pc):
