@@ -49,7 +49,7 @@ class m6502(Processor):
         m[0x95] = self._STAzpx
         m[0x8d] = self._STAabs
         #self._op_map[0x9d] = self._STA
-        #self._op_map[0x99] = self._STA
+        m[0x99] = self._STAabsy
         #self._op_map[0x81] = self._STA
         #self._op_map[0x91] = self._STA
         
@@ -225,9 +225,9 @@ class m6502(Processor):
         return 3
 
     def _LDAabsy(self, pc):
-        a = self._mem_read(pc + 1)
-        a += (self._mem_read(pc + 2) << 8)
-        t = self._mem_read((a + self._y) & 0xffff)
+        mr = self._mem_read
+        a0 = mr(pc + 1) + (mr(pc + 2) << 8) + self._y
+        t = mr(a0 & 0xffff)
         self._a = t
         self._flags.set_flags(t)
         return 3
@@ -237,13 +237,18 @@ class m6502(Processor):
         return 2
 
     def _STAzpx(self, pc):
-        a0 = (self._mem_read(pc + 1) + self._x) & 0xff
-        self._mem_write(a0, self._a)
+        self._mem_write((self._mem_read(pc + 1) + self._x) & 0xff, self._a)
         return 2
 
     def _STAabs(self, pc):
         mr = self._mem_read
         self._mem_write(mr(pc + 1) + (mr(pc + 2) << 8), self._a)
+        return 3
+        
+    def _STAabsy(self, pc):
+        mr = self._mem_read
+        a0 = mr(pc + 1) + (mr(pc + 2) << 8) + self._y
+        self._mem_write(a0 & 0xffff, self._a)
         return 3
 
     def _LDXimm(self, pc):

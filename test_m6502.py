@@ -101,8 +101,12 @@ class Test_m6502(unittest.TestCase):
         self._ram._m[4] = 0xad      # LDA $0103
         self._ram._m[5] = 0x03
         self._ram._m[6] = 0x01
+        self._ram._m[7] = 0xb9      # LDA $0104, Y
+        self._ram._m[8] = 0x04
+        self._ram._m[9] = 0x01
         self._ram._m[16] = 0x71
         self._ram._m[259] = 0xa1
+        self._ram._m[262] = 0x6b
         self._proc._step()
         self.assertEqual(self._proc._a, 0x68)
         self.assertFalse(self._proc._flags.z)
@@ -118,6 +122,12 @@ class Test_m6502(unittest.TestCase):
         self.assertFalse(self._proc._flags.z)
         self.assertTrue(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x0007)
+        self._proc._y = 0x02
+        self._proc._step()
+        self.assertEqual(self._proc._a, 0x6b)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.n)
+        self.assertEqual(self._proc._pc, 0x000a)
         
     def test_ldy(self):
         self.clear()
@@ -170,9 +180,12 @@ class Test_m6502(unittest.TestCase):
         self._ram._m[1] = 0x10
         self._ram._m[2] = 0x95      # STA $10, X
         self._ram._m[3] = 0x10
-        self._ram._m[4] = 0x8d      # STA $101
+        self._ram._m[4] = 0x8d      # STA $0101
         self._ram._m[5] = 0x01
         self._ram._m[6] = 0x01
+        self._ram._m[7] = 0x99      # STA $0102, Y
+        self._ram._m[8] = 0x02
+        self._ram._m[9] = 0x01
         self._proc._a = 0x7a
         self._proc._step()
         self.assertEqual(self._ram._m[16], 0x7a)
@@ -186,6 +199,11 @@ class Test_m6502(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._ram._m[257], 0x12)
         self.assertEqual(self._proc._pc, 0x0007)
+        self._proc._a = 0x98
+        self._proc._y = 0x02
+        self._proc._step()
+        self.assertEqual(self._ram._m[260], 0x98)
+        self.assertEqual(self._proc._pc, 0x000a)
         
     def test_dex(self):
         self.clear()
