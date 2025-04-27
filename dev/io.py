@@ -1,3 +1,8 @@
+"""
+General purpose I/O devices
+"""
+
+import threading
 
 
 class i8255(object):
@@ -70,18 +75,23 @@ class mc6820(object):
         self._dir_reg_b = 0x00
         self._out_reg_a = 0x00
         self._out_reg_b = 0x00
+        self._lock = threading.Lock()
         
     def size(self):
         return 4
         
     def read8(self, addr):
-        print("mc6820 rd %04x" % addr)
+        #print("mc6820 rd %04x" % addr)
         if addr == 0:
             if self._cntl_reg_a & 0x04:
                 if self._port_in is not None:
                     mi = (~self._dir_reg_a) & 0xff
-                    return (self._port_in(0) & mi) | \
-                           (self._out_reg_a & self._dir_reg_a)
+                    x = (self._port_in(0) & mi) | \
+                        (self._out_reg_a & self._dir_reg_a)
+                    self._lock.acquire()
+                    self._cntl_reg_a &= 0x7f
+                    self._lock.release()
+                    return x
                 else:
                     return 0xff
             else:
@@ -92,8 +102,12 @@ class mc6820(object):
             if self._cntl_reg_b & 0x04:
                 if self._port_in is not None:
                     mi = (~self._dir_reg_b) & 0xff
-                    return (self._port_in(1) & mi) | \
-                           (self._out_reg_b & self._dir_reg_b)
+                    x = (self._port_in(1) & mi) | \
+                        (self._out_reg_b & self._dir_reg_b)
+                    self._lock.acquire()
+                    self._cntl_reg_b &= 0x7f
+                    self._lock.release()
+                    return x
                 else:
                     return 0xff
             else:
@@ -102,7 +116,7 @@ class mc6820(object):
             return self._cntl_reg_b
         
     def write8(self, addr, value):
-        print("mc6820 wr %04x %02x" % (addr, value))
+        #print("mc6820 wr %04x %02x" % (addr, value))
         if addr == 0:
             if self._cntl_reg_a & 0x04:
                 if self._port_out is not None:
@@ -123,3 +137,11 @@ class mc6820(object):
                 self._dir_reg_b = value
         else:
             self._cntl_reg_b = value & 0x3f
+            
+    def strobe(self, port):
+        self._lock.acquire()
+        if port == 0:
+            self._cntl_reg_a |= 0x80
+        elif port == 1:
+            self._cntl_reg_b |= 0x80
+        self._lock.release()
