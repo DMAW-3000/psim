@@ -25,16 +25,16 @@ class APPLECON_App(object):
         self._cred   = pygame.Color(255, 0, 0)
         
         self._kb_map = {
-            pygame.K_1          : 2,
-            pygame.K_2          : 3,
-            pygame.K_3          : 4,
-            pygame.K_4          : 5,
-            pygame.K_5          : 6,
-            pygame.K_6          : 7,
-            pygame.K_7          : 8,
-            pygame.K_8          : 9,
-            pygame.K_9          : 10,
-            pygame.K_0          : 11,
+            pygame.K_1          : ord('1'),
+            pygame.K_2          : ord('2'),
+            pygame.K_3          : ord('3'),
+            pygame.K_4          : ord('4'),
+            pygame.K_5          : ord('5'),
+            pygame.K_6          : ord('6'),
+            pygame.K_7          : ord('7'),
+            pygame.K_8          : ord('8'),
+            pygame.K_9          : ord('9'),
+            pygame.K_0          : ord('0'),
             
             pygame.K_ESCAPE     : 1,
             pygame.K_MINUS      : 12,
@@ -53,35 +53,35 @@ class APPLECON_App(object):
             pygame.K_INSERT     : 82,
             pygame.K_DELETE     : 83,
             
-            pygame.K_q          : 16,
-            pygame.K_w          : 17,
-            pygame.K_e          : 18,
-            pygame.K_r          : 19,
-            pygame.K_t          : 20,
-            pygame.K_y          : 21,
-            pygame.K_u          : 22,
-            pygame.K_i          : 23,
-            pygame.K_o          : 24,
-            pygame.K_p          : 25,
-            pygame.K_a          : 30,
-            pygame.K_s          : 31,
-            pygame.K_d          : 32,
-            pygame.K_f          : 33,
-            pygame.K_g          : 34,
-            pygame.K_h          : 35,
-            pygame.K_j          : 36,
-            pygame.K_k          : 37,
-            pygame.K_l          : 38,
-            pygame.K_z          : 44,
-            pygame.K_x          : 45,
-            pygame.K_c          : 46,
-            pygame.K_v          : 47,
-            pygame.K_b          : 48,
-            pygame.K_n          : 49,
-            pygame.K_m          : 50,
+            pygame.K_q          : ord('Q'),
+            pygame.K_w          : ord('W'),
+            pygame.K_e          : ord('E'),
+            pygame.K_r          : ord('R'),
+            pygame.K_t          : ord('T'),
+            pygame.K_y          : ord('Y'),
+            pygame.K_u          : ord('U'),
+            pygame.K_i          : ord('I'),
+            pygame.K_o          : ord('O'),
+            pygame.K_p          : ord('P'),
+            pygame.K_a          : ord('A'),
+            pygame.K_s          : ord('S'),
+            pygame.K_d          : ord('D'),
+            pygame.K_f          : ord('F'),
+            pygame.K_g          : ord('G'),
+            pygame.K_h          : ord('H'),
+            pygame.K_j          : ord('J'),
+            pygame.K_k          : ord('K'),
+            pygame.K_l          : ord('L'),
+            pygame.K_z          : ord('Z'),
+            pygame.K_x          : ord('X'),
+            pygame.K_c          : ord('C'),
+            pygame.K_v          : ord('V'),
+            pygame.K_b          : ord('B'),
+            pygame.K_n          : ord('N'),
+            pygame.K_m          : ord('M'),
             
             pygame.K_TAB        : 15,
-            pygame.K_RETURN     : 28,
+            pygame.K_RETURN     : 0x0d,
             pygame.K_LCTRL      : 29,
             pygame.K_RCTRL      : 29,
             pygame.K_LSHIFT     : 42,
@@ -91,7 +91,7 @@ class APPLECON_App(object):
             pygame.K_CAPSLOCK   : 58,
             pygame.K_NUMLOCK    : 69,
             
-            pygame.K_BACKQUOTE  : 41,
+            pygame.K_BACKQUOTE  : ord('~'),
         }
 
     def run(self):
@@ -112,13 +112,9 @@ class APPLECON_App(object):
         
         while True:
             for event in pygame.event.get():
-                if (event.type == pygame.KEYDOWN) or \
-                   (event.type == pygame.KEYUP):
+                if (event.type == pygame.KEYDOWN):
                     if event.key in self._kb_map:
-                        x = self._kb_map[event.key]
-                        if event.type == pygame.KEYUP:
-                            x |= 0x80
-                        self._kbData[0] = x
+                        self._kbData[0] = self._kb_map[event.key]
                         self._kbSock.sendto(self._kbData, self._kbAddr)
                         time.sleep(0)
                 elif event.type == pygame.QUIT:
@@ -131,7 +127,7 @@ class APPLECON_App(object):
                     ccol = 0
                     cline += 1
                 else:
-                    self._vram[ccol + (cline * 24)] = c
+                    self._vram[ccol + (cline * 40)] = c
                     ccol += 1
                     if ccol == 40:
                         ccol = 0

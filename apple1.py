@@ -11,6 +11,8 @@ from dev.io import mc6820
 from memory import *
 
 import os
+import socket
+import threading
 from multiprocessing import shared_memory
 
 RAM_ADDR = 0x0000
@@ -36,11 +38,42 @@ class Apple1_Display(object):
             self._buf = self._sm
         
     def write(self, value):
-        print("DISPLAY: %s" % chr(value))
         self._buf[0] = value | 0x80
         
     def read(self):
         return self._buf[0]
+        
+        
+class Apple1_Keyboard(object):
+
+    def __init__(self, port, pia, proc):
+        self._proc = proc
+        self._pia = pia
+        self._kb_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._kb_sock.settimeout(2.0)
+        self._kb_sock.bind(('', port))
+        self._kb_escape = ord('~')
+        self._kb_buf = 0x00
+        threading.Thread(target = self._kb_recv).start()
+        
+    def read(self):
+        return self._kb_buf
+        
+    def _kb_recv(self):
+        while True:
+            try:
+                c = int((self._kb_sock.recvfrom(1)[0])[0])
+                #print("KB data: %02x" % c)
+                if c == self._kb_escape:
+                    self._proc.halt()
+                    return
+                self._kb_buf = c | 0x80
+                self._pia.strobe(0)
+            except socket.timeout:
+                pass
+            finally:
+                if self._proc.halted():
+                    return
 
 
 class Apple1_System(object):
@@ -72,9 +105,12 @@ class Apple1_System(object):
         
         self._display = Apple1_Display()
         
+        self._keyboard = Apple1_Keyboard(50000, self._pia, self.proc)
+        
     def _pia_in(self, port):
-        print("PIA in %d" % port)
-        if port == 1:
+        if port == 0:
+            return self._keyboard.read()
+        elif port == 1:
             return self._display.read()
         return 0xff
         
