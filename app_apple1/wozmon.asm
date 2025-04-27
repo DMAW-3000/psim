@@ -95,7 +95,7 @@ NEXTCHAR        LDA     KBDCR           ;Wait for key press
 
 ; Line received, now let's parse it
 
-                LDY     #-1             ;Reset text index
+LSTART          LDY     #-1             ;Reset text index
                 LDA     #0              ;Default mode is XAM
                 TAX                     ;X=0
 
