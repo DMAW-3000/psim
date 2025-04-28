@@ -165,14 +165,29 @@ class Test_m6502(unittest.TestCase):
         self.assertFalse(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x0004)
         
+    def test_stx(self):
+        self.clear()
+        self._ram._m[0] = 0x86      # STX $10
+        self._ram._m[1] = 0x10
+        self._proc._x = 0x2c
+        self._proc._step()
+        self.assertEqual(self._ram._m[16], 0x2c)
+        self.assertEqual(self._proc._pc, 0x0002)
+        
     def test_sty(self):
         self.clear()
         self._ram._m[0] = 0x84      # STY $10
         self._ram._m[1] = 0x10
+        self._ram._m[2] = 0x8c      # STY $0102
+        self._ram._m[3] = 0x02
+        self._ram._m[4] = 0x01
         self._proc._y = 0xb3
         self._proc._step()
         self.assertEqual(self._ram._m[16], 0xb3)
-        self.assertEqual(self._proc._pc, 0x0002)
+        self._proc._y = 0x61
+        self._proc._step()
+        self.assertEqual(self._ram._m[258], 0x61)
+        self.assertEqual(self._proc._pc, 0x0005)
         
     def test_sta(self):
         self.clear()
@@ -555,6 +570,19 @@ class Test_m6502(unittest.TestCase):
         self.assertEqual(self._ram._m[32], 0xa1)
         self.assertFalse(self._proc._flags.z)
         self.assertFalse(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0003)
+        
+    def test_rol(self):
+        self.clear()
+        self._ram._m[0] = 0x26      # ROL $20
+        self._ram._m[1] = 0x20
+        self._ram._m[32] = 0x42
+        self._proc._flags.c = True
+        self._proc._step()
+        self.assertEqual(self._ram._m[32], 0x85)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0002)
         
     def test_inc(self):
         self.clear()

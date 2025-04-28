@@ -64,6 +64,8 @@ class m6502(Processor):
         #self._op_map[0xb4] = self._LDY
         #self._op_map[0xac] = self._LDY
         #self._op_map[0xbc] = self._LDY
+        
+        m[0x86] = self._STXzp
 
         m[0x84] = self._STYzp
         m[0x8c] = self._STYabs
@@ -104,6 +106,8 @@ class m6502(Processor):
 
         m[0x09] = self._ORAimm
         m[0x05] = self._ORAzp
+        
+        m[0x49] = self._EORimm
 
         m[0x24] = self._BITzp
         m[0x2c] = self._BITabs
@@ -121,6 +125,8 @@ class m6502(Processor):
         #self._op_map[0x76] = self._ROR
         #self._op_map[0x6e] = self._ROR
         #self._op_map[0x7e] = self._ROR
+        
+        m[0x26] = self._ROLzp
 
         m[0x4c] = self._JMPabs
         #self._op_map[0x6c] = self._JMP
@@ -276,6 +282,10 @@ class m6502(Processor):
         self._y = t
         self._flags.set_flags(t)
         return 2
+        
+    def _STXzp(self, pc):
+        self._mem_write(self._mem_read(pc + 1), self._x)
+        return 2
 
     def _STYzp(self, pc):
         self._mem_write(self._mem_read(pc + 1), self._y)
@@ -380,6 +390,12 @@ class m6502(Processor):
         self._a = t
         self._flags.set_flags(t)
         return 2
+        
+    def _EORimm(self, pc):
+        t = self._a ^ self._mem_read(pc + 1)
+        self._a = t
+        self._flags.set_flags(t)
+        return 2
 
     def _BITzp(self, pc):
         mr = self._mem_read
@@ -447,6 +463,20 @@ class m6502(Processor):
         x0 >>= 1
         if f.c:
             x0 |= 0x80
+        f.c = (t != 0x00)
+        self._mem_write(a, x0)
+        f.set_flags(x0)
+        return 2
+        
+    def _ROLzp(self, pc):
+        f = self._flags
+        mr = self._mem_read
+        a = mr(pc + 1)
+        x0 = mr(a)
+        t = (x0 & 0x80)
+        x0 = (x0 << 1) & 0xff
+        if f.c:
+            x0 |= 0x01
         f.c = (t != 0x00)
         self._mem_write(a, x0)
         f.set_flags(x0)
