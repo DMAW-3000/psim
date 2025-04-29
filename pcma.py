@@ -95,8 +95,6 @@ class PCMA_Motherboard(object):
                 self._kb_buf = c
                 self._intr_ctl.intr(1)
             except socket.timeout:
-                pass
-            finally:
                 if self._proc.halted():
                     return
                     

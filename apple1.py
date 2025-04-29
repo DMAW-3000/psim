@@ -70,8 +70,6 @@ class Apple1_Keyboard(object):
                 self._kb_buf = c | 0x80
                 self._pia.strobe(0)
             except socket.timeout:
-                pass
-            finally:
                 if self._proc.halted():
                     return
 
