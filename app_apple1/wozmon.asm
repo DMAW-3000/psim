@@ -147,7 +147,7 @@ NOTHEX          CPY     YSAV            ;Was at least 1 hex digit given?
                 BEQ     ESCAPE          ;No! Ignore all, start from scratch
 
                 BIT     MODE            ;Test MODE byte
-                BVC     NOTSTOR         ;B6=0 is STOR, 1 is XAM or BLOCK XAM
+                BVC     NOTSTOR         ;B6=1 is STOR, 0 is XAM or BLOCK XAM
 
 ; STOR mode, save LSD of new hex byte
 
