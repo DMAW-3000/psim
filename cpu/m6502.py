@@ -42,7 +42,7 @@ class m6502(Processor):
         m[0xad] = self._LDAabs
         #self._op_map[0xbd] = self._LDA
         m[0xb9] = self._LDAabsy
-        #self._op_map[0xa1] = self._LDA
+        m[0xa1] = self._LDAindx
         #self._op_map[0xb1] = self._LDA
 
         m[0x85] = self._STAzp
@@ -91,6 +91,7 @@ class m6502(Processor):
         #self._op_map[0xd1] = self._CMP
 
         m[0xc0] = self._CPYimm
+        m[0xc4] = self._CPYzp
 
         m[0xe6] = self._INCzp
         #self._op_map[0xf6] = self._INC
@@ -138,6 +139,7 @@ class m6502(Processor):
         m[0x30] = self._BMI
         m[0x38] = self._SEC
         m[0x48] = self._PHA
+        m[0x50] = self._BVC
         m[0x58] = self._CLI
         m[0x60] = self._RTS
         m[0x68] = self._PLA
@@ -237,6 +239,14 @@ class m6502(Processor):
         self._a = t
         self._flags.set_flags(t)
         return 3
+        
+    def _LDAindx(self, pc):
+        mr = self._mem_read
+        a0 = (mr(pc + 1) + self._x) & 0xff
+        t = mr(mr(a0) + (mr(a0 + 1) << 8))
+        self._a = t
+        self._flags.set_flags(t)
+        return 2
 
     def _STAzp(self, pc):
         self._mem_write(self._mem_read(pc + 1), self._a)
@@ -352,6 +362,14 @@ class m6502(Processor):
     def _CPYimm(self, pc):
         f = self._flags
         t = self._y - self._mem_read(pc + 1)
+        f.c = (t >= 0)
+        f.set_flags(t & 0xff)
+        return 2
+        
+    def _CPYzp(self, pc):
+        f = self._flags
+        mr = self._mem_read
+        t = self._y - mr(mr(pc + 1))
         f.c = (t >= 0)
         f.set_flags(t & 0xff)
         return 2
@@ -625,6 +643,12 @@ class m6502(Processor):
             
     def _BPL(self, pc):
         if not self._flags.n:
+            return self._br_offset(pc)
+        else:
+            return 2
+            
+    def _BVC(self, pc):
+        if not self._flags.v:
             return self._br_offset(pc)
         else:
             return 2

@@ -104,30 +104,41 @@ class Test_m6502(unittest.TestCase):
         self._ram._m[7] = 0xb9      # LDA $0104, Y
         self._ram._m[8] = 0x04
         self._ram._m[9] = 0x01
+        self._ram._m[10] = 0xa1     # LDA ($11, X)
+        self._ram._m[11] = 0x11
         self._ram._m[16] = 0x71
+        self._ram._m[18] = 0x14
+        self._ram._m[19] = 0x00
+        self._ram._m[20] = 0x8b
         self._ram._m[259] = 0xa1
         self._ram._m[262] = 0x6b
-        self._proc._step()
+        self._proc._step()          # LDA #$68
         self.assertEqual(self._proc._a, 0x68)
         self.assertFalse(self._proc._flags.z)
         self.assertFalse(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x0002)
-        self._proc._step()
+        self._proc._step()          # LDA $10
         self.assertEqual(self._proc._a, 0x71)
         self.assertFalse(self._proc._flags.z)
         self.assertFalse(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x0004)
-        self._proc._step()
+        self._proc._step()          # LDA $0103
         self.assertEqual(self._proc._a, 0xa1)
         self.assertFalse(self._proc._flags.z)
         self.assertTrue(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x0007)
         self._proc._y = 0x02
-        self._proc._step()
+        self._proc._step()          # LDA $0104, Y
         self.assertEqual(self._proc._a, 0x6b)
         self.assertFalse(self._proc._flags.z)
         self.assertFalse(self._proc._flags.n)
         self.assertEqual(self._proc._pc, 0x000a)
+        self._proc._x = 0x01
+        self._proc._step()          # LDA ($11, X)
+        self.assertEqual(self._proc._a, 0x8b)
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.n)
+        self.assertEqual(self._proc._pc, 0x000c)
         
     def test_ldy(self):
         self.clear()
@@ -400,6 +411,18 @@ class Test_m6502(unittest.TestCase):
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x000a)
         
+    def test_bvc(self):
+        self.clear()
+        self._ram._m[0] = 0x50      # BVC $06
+        self._ram._m[1] = 0x06
+        self._ram._m[8] = 0x50      # BVC $06
+        self._ram._m[9] = 0x06
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0008)
+        self._proc._flags.v = True
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x000a)
+        
     def test_jmp(self):
         self.clear()
         self._ram._m[0] = 0x4c      # JMP $0102
@@ -486,6 +509,22 @@ class Test_m6502(unittest.TestCase):
         self.assertTrue(self._proc._flags.z)
         self.assertTrue(self._proc._flags.c)
         self.assertEqual(self._proc._pc, 0x0006)
+        
+    def test_cpy(self):
+        self.clear()
+        self._ram._m[0] = 0xc0      # CPY #$89
+        self._ram._m[1] = 0x89
+        self._ram._m[2] = 0xc4      # CPY $10
+        self._ram._m[3] = 0x10
+        self._ram._m[16] = 0xfa
+        self._proc._y = 0x90
+        self._proc._step()
+        self.assertFalse(self._proc._flags.z)
+        self.assertTrue(self._proc._flags.c)
+        self._proc._step()
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.c)
+        self.assertEqual(self._proc._pc, 0x0004)
         
     def test_and(self):
         self.clear()
