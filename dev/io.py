@@ -126,7 +126,9 @@ class mc6820(object):
             else:
                 self._dir_reg_a = value
         elif addr == 1:
-            self._cntl_reg_a = value & 0x3f
+            self._lock.acquire()
+            self._cntl_reg_a |= (value & 0x3f)
+            self._lock.release()
         elif addr == 2:
             if self._cntl_reg_b & 0x04:
                 if self._port_out is not None:
@@ -136,7 +138,9 @@ class mc6820(object):
             else:
                 self._dir_reg_b = value
         else:
-            self._cntl_reg_b = value & 0x3f
+            self._lock.acquire()
+            self._cntl_reg_b |= (value & 0x3f)
+            self._lock.release()
             
     def strobe(self, port):
         self._lock.acquire()
