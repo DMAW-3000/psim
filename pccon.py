@@ -137,7 +137,7 @@ class PCCON_App(object):
             p = 0
             y = 0
             pygame.display.flip()
-            time.sleep(0.05)
+            time.sleep(0.01)
             
     
 

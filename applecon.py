@@ -37,21 +37,15 @@ class APPLECON_App(object):
             pygame.K_0          : ord('0'),
             
             pygame.K_ESCAPE     : 1,
-            pygame.K_MINUS      : 12,
-            pygame.K_EQUALS     : 13,
+            pygame.K_MINUS      : ord('-'),
+            pygame.K_EQUALS     : ord('='),
             pygame.K_BACKSPACE  : 14,
-            pygame.K_SEMICOLON  : 39,
-            pygame.K_BACKSLASH  : 43,
-            pygame.K_COMMA      : 51,
-            pygame.K_PERIOD     : 52,
-            pygame.K_SLASH      : 53,
-            pygame.K_SPACE      : 57,
-            pygame.K_HOME       : 71,
-            pygame.K_PAGEUP     : 73,
-            pygame.K_END        : 79,
-            pygame.K_PAGEDOWN   : 81,
-            pygame.K_INSERT     : 82,
-            pygame.K_DELETE     : 83,
+            pygame.K_SEMICOLON  : ord(';'),
+            pygame.K_BACKSLASH  : ord('\\'),
+            pygame.K_COMMA      : ord(','),
+            pygame.K_PERIOD     : ord('.'),
+            pygame.K_SLASH      : ord('/'),
+            pygame.K_SPACE      : ord(' '),
             
             pygame.K_q          : ord('Q'),
             pygame.K_w          : ord('W'),
@@ -82,14 +76,6 @@ class APPLECON_App(object):
             
             pygame.K_TAB        : 15,
             pygame.K_RETURN     : 0x0d,
-            pygame.K_LCTRL      : 29,
-            pygame.K_RCTRL      : 29,
-            pygame.K_LSHIFT     : 42,
-            pygame.K_RSHIFT     : 54,
-            pygame.K_LALT       : 56,
-            pygame.K_RALT       : 56,
-            pygame.K_CAPSLOCK   : 58,
-            pygame.K_NUMLOCK    : 69,
             
             pygame.K_BACKQUOTE  : ord('~'),
         }
@@ -149,7 +135,7 @@ class APPLECON_App(object):
             y = 0
             
             pygame.display.flip()
-            time.sleep(0.05)
+            time.sleep(0.01)
             
     
 
