@@ -36,10 +36,10 @@ class APPLECON_App(object):
             pygame.K_9          : ord('9'),
             pygame.K_0          : ord('0'),
             
-            pygame.K_ESCAPE     : 1,
+            pygame.K_ESCAPE     : 0x1b,
             pygame.K_MINUS      : ord('-'),
             pygame.K_EQUALS     : ord('='),
-            pygame.K_BACKSPACE  : 14,
+            pygame.K_BACKSPACE  : ord('\b'),
             pygame.K_SEMICOLON  : ord(';'),
             pygame.K_BACKSLASH  : ord('\\'),
             pygame.K_COMMA      : ord(','),
@@ -112,6 +112,8 @@ class APPLECON_App(object):
                 if c == 0x0d:
                     ccol = 0
                     cline += 1
+                elif c == 0x1b:
+                    pass
                 else:
                     self._vram[ccol + (cline * 40)] = c
                     ccol += 1
