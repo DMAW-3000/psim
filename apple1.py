@@ -13,8 +13,8 @@ from memory import *
 import os
 import socket
 import threading
-from multiprocessing import shared_memory
 
+from dev.video import VRAM
 RAM_ADDR = 0x0000
 RAM_SIZE = 0x4000
 
@@ -30,12 +30,8 @@ APP_DIR = "app_apple1"
 class Apple1_Display(object):
 
     def __init__(self):
-        try:
-            self._sm = shared_memory.SharedMemory("VMEM_APPLE1")
-            self._buf = self._sm._buf
-        except FileNotFoundError:
-            self._sm = bytearray(1)
-            self._buf = self._sm
+        self._sm = VRAM(1, "VMEM_APPLE1")
+        self._buf = self._sm._buf
         
     def write(self, value):
         self._buf[0] = value | 0x80
