@@ -108,12 +108,12 @@ BLSKIP          INY                     ;Advance text index
 NEXTITEM        LDA     IN,Y            ;Get character
                 CMP     #CR
                 BEQ     GETLINE         ;We're done if it's CR!
-                CMP     #"."
+                CMP     #"."+128
                 BCC     BLSKIP          ;Ignore everything below "."!
                 BEQ     SETMODE         ;Set BLOCK XAM mode ("." = $AE)
-                CMP     #":"
+                CMP     #":"+128
                 BEQ     SETSTOR         ;Set STOR mode! $BA will become $7B
-                CMP     #"R"
+                CMP     #"R"+128
                 BEQ     RUN             ;Run the program! Forget the rest
                 STX     L               ;Clear input value (X=0)
                 STX     H
