@@ -15,6 +15,8 @@ import socket
 import threading
 
 from dev.video import VRAM
+
+
 RAM_ADDR = 0x0000
 RAM_SIZE = 0x4000
 
