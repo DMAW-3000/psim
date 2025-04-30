@@ -21,6 +21,10 @@ class APPLECON_App(object):
         for n in range(len(self._vram)):
             self._vram[n] = c
             
+        self._rng920 = range(920)
+        self._rng40 = range(40)
+        self._cspace = ord(' ')
+            
         self._cblack = pygame.Color(0, 0, 0)
         self._cgreen = pygame.Color(0, 255, 0)
         self._cred   = pygame.Color(255, 0, 0)
@@ -179,6 +183,12 @@ class APPLECON_App(object):
                 if c == 0x0d:
                     ccol = 0
                     cline += 1
+                    if cline == 24:
+                        for n in self._rng920:
+                            self._vram[n] = self._vram[n + 40]
+                        for n in self._rng40:
+                            self._vram[920 + n] = self._cspace
+                        cline -= 1
                 elif c == 0x1b:
                     pass
                 else:
@@ -187,6 +197,12 @@ class APPLECON_App(object):
                     if ccol == 40:
                         ccol = 0
                         cline += 1
+                        if cline == 24:
+                            for n in self._rng920:
+                                self._vram[n] = self._vram[n + 40]
+                            for n in self._rng40:
+                                self._vram[920 + n] = self._cspace
+                            cline -= 1
                 self._port._buf[0] = c
                     
             buf = self._vram
