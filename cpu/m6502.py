@@ -50,7 +50,7 @@ class m6502(Processor):
         m[0x8d] = self._STAabs
         #self._op_map[0x9d] = self._STA
         m[0x99] = self._STAabsy
-        #self._op_map[0x81] = self._STA
+        m[0x81] = self._STAindx
         #self._op_map[0x91] = self._STA
         
         m[0xa2] = self._LDXimm
@@ -130,7 +130,7 @@ class m6502(Processor):
         m[0x26] = self._ROLzp
 
         m[0x4c] = self._JMPabs
-        #self._op_map[0x6c] = self._JMP
+        m[0x6c] = self._JMPind
 
         m[0x00] = self._BRK
         m[0x10] = self._BPL
@@ -157,6 +157,7 @@ class m6502(Processor):
         m[0xca] = self._DEX
         m[0xd0] = self._BNE
         m[0xd8] = self._CLD
+        m[0xe8] = self._INX
         m[0xea] = self._NOP
         m[0xf0] = self._BEQ
         m[0xf8] = self._SED
@@ -266,6 +267,12 @@ class m6502(Processor):
         a0 = mr(pc + 1) + (mr(pc + 2) << 8) + self._y
         self._mem_write(a0 & 0xffff, self._a)
         return 3
+        
+    def _STAindx(self, pc):
+        mr = self._mem_read
+        a0 = (mr(pc + 1) + self._x) & 0xff
+        self._mem_write(mr(a0) + (mr(a0 + 1) << 8), self._a)
+        return 2
 
     def _LDXimm(self, pc):
         t = self._mem_read(pc + 1)
@@ -561,6 +568,12 @@ class m6502(Processor):
         self._flags.set_flags(t)
         return 1
         
+    def _INX(self, pc):
+        t = (self._x + 1) & 0xff
+        self._x = t
+        self._flags.set_flags(t)
+        return 1
+        
     def _INY(self, pc):
         t = (self._y + 1) & 0xff
         self._y = t
@@ -599,7 +612,13 @@ class m6502(Processor):
     def _JMPabs(self, pc):
         mr = self._mem_read
         self._pc = mr(pc + 1) + (mr(pc + 2) << 8)
-        return 0    
+        return 0
+
+    def _JMPind(self, pc):
+        mr = self._mem_read
+        a0 = mr(pc + 1) + (mr(pc + 2) << 8)
+        self._pc = mr(a0) + (mr(a0 + 1) << 8)
+        return 0
 
     def _PHA(self, pc):
         self._stack_write(0, self._a)

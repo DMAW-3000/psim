@@ -212,24 +212,33 @@ class Test_m6502(unittest.TestCase):
         self._ram._m[7] = 0x99      # STA $0102, Y
         self._ram._m[8] = 0x02
         self._ram._m[9] = 0x01
+        self._ram._m[10] = 0x81     # STA ($14, X)
+        self._ram._m[11] = 0x14
+        self._ram._m[21] = 0x05
+        self._ram._m[22] = 0x01
         self._proc._a = 0x7a
-        self._proc._step()
+        self._proc._step()          # STA $10
         self.assertEqual(self._ram._m[16], 0x7a)
         self.assertEqual(self._proc._pc, 0x0002)
         self._proc._a = 0x69
         self._proc._x = 0x01
-        self._proc._step()
+        self._proc._step()          # STA $10, X
         self.assertEqual(self._ram._m[17], 0x69)
         self.assertEqual(self._proc._pc, 0x0004)
         self._proc._a = 0x12
-        self._proc._step()
+        self._proc._step()          # STA $0101
         self.assertEqual(self._ram._m[257], 0x12)
         self.assertEqual(self._proc._pc, 0x0007)
         self._proc._a = 0x98
         self._proc._y = 0x02
-        self._proc._step()
+        self._proc._step()          # STA $0102, Y
         self.assertEqual(self._ram._m[260], 0x98)
         self.assertEqual(self._proc._pc, 0x000a)
+        self._proc._a = 0x2d
+        self._proc._x = 0x01
+        self._proc._step()          # STA ($14, X)
+        self.assertEqual(self._ram._m[261], 0x2d)
+        self.assertEqual(self._proc._pc, 0x000c)
         
     def test_dex(self):
         self.clear()
@@ -244,6 +253,21 @@ class Test_m6502(unittest.TestCase):
         self.assertEqual(self._proc._x, 0xff)
         self.assertFalse(self._proc._flags.z)
         self.assertTrue(self._proc._flags.n)
+        self.assertTrue(self._proc._pc, 0x0002)
+        
+    def test_inx(self):
+        self.clear()
+        self._ram._m[0] = 0xe8      # INX
+        self._ram._m[1] = 0xe8      # INX
+        self._proc._x = 0xff
+        self._proc._step()
+        self.assertEqual(self._proc._x, 0x00)
+        self.assertTrue(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.n)
+        self._proc._step()
+        self.assertEqual(self._proc._x, 0x01)
+        self.assertFalse(self._proc._flags.z)
+        self.assertFalse(self._proc._flags.n)
         self.assertTrue(self._proc._pc, 0x0002)
         
     def test_dey(self):
@@ -428,11 +452,21 @@ class Test_m6502(unittest.TestCase):
         self._ram._m[0] = 0x4c      # JMP $0102
         self._ram._m[1] = 0x02
         self._ram._m[2] = 0x01
+        self._ram._m[3] = 0x06
+        self._ram._m[4] = 0x01
         self._ram._m[258] = 0xea    # NOP
+        self._ram._m[259] = 0x6c    # JMP ($0003)
+        self._ram._m[260] = 0x03
+        self._ram._m[261] = 0x00
+        self._ram._m[262] = 0xea    # NOP
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x0102)
         self._proc._step()
         self.assertEqual(self._proc._pc, 0x0103)
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0106)
+        self._proc._step()
+        self.assertEqual(self._proc._pc, 0x0107)
         
     def test_jsr(self):
         self.clear()
