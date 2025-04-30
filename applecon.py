@@ -39,7 +39,7 @@ class APPLECON_App(object):
             pygame.K_ESCAPE     : 0x1b,
             pygame.K_MINUS      : ord('-'),
             pygame.K_EQUALS     : ord('='),
-            pygame.K_BACKSPACE  : ord('\b'),
+            pygame.K_BACKSPACE  : 0x5f,
             pygame.K_SEMICOLON  : ord(';'),
             pygame.K_BACKSLASH  : ord('\\'),
             pygame.K_COMMA      : ord(','),
