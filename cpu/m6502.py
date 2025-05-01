@@ -28,9 +28,9 @@ class m6502(Processor):
         self._stack_addr = 0x0100
         
         self._pc = 0x0000
-        self._a = 0x00
-        self._x = 0x00
-        self._y = 0x00
+        self._a  = 0x00
+        self._x  = 0x00
+        self._y  = 0x00
         self._sp = 0x00
 
         self._op_map = [None] * 256

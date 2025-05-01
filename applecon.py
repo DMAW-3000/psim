@@ -161,6 +161,7 @@ class APPLECON_App(object):
         screen.fill(self._cblack)
         
         while True:
+            # Handle keyboard events
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if (event.key == pygame.K_LSHIFT) or (event.key == pygame.K_RSHIFT):
@@ -170,16 +171,19 @@ class APPLECON_App(object):
                         kmap = self._kb_map_upper
                     else:
                         kmap = self._kb_map_lower
-                    if event.key in kmap:
+                    try:
                         self._kbData[0] = kmap[event.key]
                         self._kbSock.sendto(self._kbData, self._kbAddr)
                         time.sleep(0)
+                    except IndexError:
+                        pass
                 elif event.type == pygame.KEYUP:
                     if (event.key == pygame.K_LSHIFT) or (event.key == pygame.K_RSHIFT):
                         self._kbShift = False
                 elif event.type == pygame.QUIT:
                     sys.exit()
-                    
+            
+            # check for new data available and insert at current location
             c = self._port._buf[0]
             if c & 0x80:
                 c &= 0x7f
@@ -207,7 +211,8 @@ class APPLECON_App(object):
                                 self._vram[920 + n] = self._cspace
                             cline -= 1
                 self._port._buf[0] = c
-                    
+
+            # redraw screen
             buf = self._vram
             y = 0
             p = 0
