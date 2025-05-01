@@ -24,6 +24,9 @@ class APPLECON_App(object):
         self._rng920 = range(920)
         self._rng40 = range(40)
         self._cspace = ord(' ')
+        self._cund = ord('_')
+        self._cur_on = True
+        self._cur_count = 0
             
         self._cblack = pygame.Color(0, 0, 0)
         self._cgreen = pygame.Color(0, 255, 0)
@@ -208,17 +211,28 @@ class APPLECON_App(object):
             buf = self._vram
             y = 0
             p = 0
+            cur = ccol + (cline * 40)
             while p < 960:
                 s = ''
-                for c in buf[p:p+40]:
-                    s += chr(c)
+                for n in self._rng40:
+                    if self._cur_on and (p == cur):
+                        c = self._cund
+                    else:
+                        c = buf[p]
+                    c = chr(c)
+                    if not c.isprintable():
+                        c = ' '
+                    s += c
+                    p += 1
                 screen.fill(self._cblack, (0, y, swidth, cheight))
                 rect = font.render_to(screen, (0,y), s, self._cgreen)
                 y += cheight
-                p += 40
-            p = 0
-            y = 0
-            
+                
+            self._cur_count += 1
+            if self._cur_count == 75:
+                self._cur_on = not self._cur_on
+                self._cur_count = 0
+
             pygame.display.flip()
             time.sleep(0.01)
             
